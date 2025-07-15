@@ -11,6 +11,7 @@ Author: QlikSense MCP Server Project
 import os
 import requests
 import logging
+import time
 from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 
@@ -155,7 +156,7 @@ class QlikClient:
     
     def _make_authenticated_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """
-        Voer geauthenticeerde request uit
+        Voer geauthenticeerde request uit met retry mechanisme
         
         Args:
             method: HTTP methode (GET, POST, etc.)
@@ -183,40 +184,83 @@ class QlikClient:
         kwargs['headers'] = headers
         kwargs['timeout'] = kwargs.get('timeout', self.timeout)
         
-        try:
-            response = self.session.request(method, url, **kwargs)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.RequestException as e:
-            raise QlikConnectionError(f"Request fout voor {endpoint}: {str(e)}")
+        # Retry mechanisme
+        last_exception = None
+        for attempt in range(self.max_retries):
+            try:
+                self.logger.debug(f"Request poging {attempt + 1}/{self.max_retries} voor {endpoint}")
+                response = self.session.request(method, url, **kwargs)
+                response.raise_for_status()
+                return response
+            except requests.exceptions.RequestException as e:
+                last_exception = e
+                if attempt < self.max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff
+                    self.logger.warning(f"Request mislukt, wacht {wait_time}s voor retry: {str(e)}")
+                    time.sleep(wait_time)
+                else:
+                    self.logger.error(f"Request definitief mislukt na {self.max_retries} pogingen")
+        
+        raise QlikConnectionError(f"Request fout voor {endpoint} na {self.max_retries} pogingen: {str(last_exception)}")
     
     def get_apps(self) -> List[Dict[str, Any]]:
         """
         Haal beschikbare QlikSense apps op
         
         Returns:
-            List[Dict[str, Any]]: Lijst van app informatie
+            List[Dict[str, Any]]: Lijst van app informatie met relevante metadata
             
         Raises:
             QlikAuthenticationError: Als authenticatie vereist is
             QlikConnectionError: Als request mislukt
-            
-        Note:
-            Deze methode is voorbereidend geïmplementeerd.
-            Volledige implementatie volgt in volgende development stappen.
         """
         self.logger.info("Ophalen van beschikbare apps")
         
-        # Placeholder implementatie - volledige implementatie volgt
-        # In volgende stappen wordt dit uitgebreid met daadwerkelijke API calls
         try:
-            # Voorbeeld endpoint - dit wordt aangepast op basis van daadwerkelijke QlikSense API
-            response = self._make_authenticated_request('GET', '/qrs/app')
-            return response.json()
+            # QRS API endpoint voor apps
+            response = self._make_authenticated_request('GET', '/qrs/app/full')
+            
+            # Parse response
+            apps_data = response.json()
+            
+            # Format app data voor MCP tool
+            formatted_apps = []
+            for app in apps_data:
+                formatted_app = {
+                    'id': app.get('id', ''),
+                    'name': app.get('name', 'Onbekend'),
+                    'description': app.get('description', ''),
+                    'owner': app.get('owner', {}).get('name', 'Onbekend'),
+                    'created': app.get('createdDate', ''),
+                    'modified': app.get('modifiedDate', ''),
+                    'published': app.get('published', False),
+                    'stream': app.get('stream', {}).get('name', '') if app.get('stream') else '',
+                    'file_size': app.get('fileSize', 0),
+                    'last_reload_time': app.get('lastReloadTime', ''),
+                    'thumbnail': app.get('thumbnail', ''),
+                    'tags': [tag.get('name', '') for tag in app.get('tags', [])],
+                    'custom_properties': [
+                        {
+                            'name': prop.get('definition', {}).get('name', ''),
+                            'value': prop.get('value', '')
+                        } for prop in app.get('customProperties', [])
+                    ]
+                }
+                formatted_apps.append(formatted_app)
+            
+            self.logger.info(f"Succesvol {len(formatted_apps)} apps opgehaald")
+            return formatted_apps
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+            elif e.response.status_code == 403:
+                raise QlikAuthenticationError("Onvoldoende rechten voor apps endpoint")
+            else:
+                raise QlikConnectionError(f"HTTP fout bij ophalen apps: {e.response.status_code}")
         except Exception as e:
             self.logger.error(f"Fout bij ophalen apps: {str(e)}")
-            # Voorlopig lege lijst teruggeven
-            return []
+            raise QlikConnectionError(f"Onverwachte fout bij ophalen apps: {str(e)}")
     
     def get_tasks(self) -> List[Dict[str, Any]]:
         """

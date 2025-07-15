@@ -14,11 +14,12 @@ import os
 import sys
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
 # MCP server imports
 from mcp.server.fastmcp import FastMCP
+from mcp import run
 
 # Local imports
 from qlik_client import QlikClient, QlikAuthenticationError, QlikConnectionError
@@ -51,6 +52,9 @@ class QlikMCPServer:
         # QlikClient instantie (wordt later geïnitialiseerd)
         self.qlik_client: Optional[QlikClient] = None
         
+        # Registreer tools
+        self._register_tools()
+        
         self.logger.info("QlikMCP Server geïnitialiseerd")
     
     def _setup_logging(self):
@@ -71,6 +75,53 @@ class QlikMCPServer:
         
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Logging geconfigureerd op niveau: {log_level}")
+    
+    def _register_tools(self):
+        """Registreer alle MCP tools"""
+        self.logger.info("Registreren van MCP tools...")
+        
+        # Apps lijst tool
+        @self.app.tool()
+        async def list_apps() -> List[Dict[str, Any]]:
+            """
+            Haal beschikbare QlikSense apps op
+            
+            Returns:
+                List[Dict[str, Any]]: Lijst van beschikbare apps met metadata
+                
+            Raises:
+                Exception: Als het ophalen van apps mislukt
+            """
+            try:
+                self.logger.info("list_apps tool aangeroepen")
+                
+                # Controleer of QlikClient beschikbaar is
+                if not self.qlik_client:
+                    raise Exception("QlikClient niet geïnitialiseerd - server startup vereist")
+                
+                if not self.qlik_client.is_authenticated():
+                    raise Exception("QlikClient niet geauthenticeerd - authenticatie vereist")
+                
+                # Haal apps op via QlikClient
+                apps = self.qlik_client.get_apps()
+                
+                self.logger.info(f"Succesvol {len(apps)} apps opgehaald")
+                return apps
+                
+            except QlikAuthenticationError as e:
+                error_msg = f"Authenticatie fout bij ophalen apps: {str(e)}"
+                self.logger.error(error_msg)
+                raise Exception(error_msg)
+            except QlikConnectionError as e:
+                error_msg = f"Verbinding fout bij ophalen apps: {str(e)}"
+                self.logger.error(error_msg)
+                raise Exception(error_msg)
+            except Exception as e:
+                error_msg = f"Onverwachte fout bij ophalen apps: {str(e)}"
+                self.logger.error(error_msg)
+                raise Exception(error_msg)
+        
+        self.logger.info("MCP tools geregistreerd")
     
     def _validate_configuration(self) -> bool:
         """
@@ -209,27 +260,9 @@ async def main():
     try:
         logger.info("QlikSense MCP Server wordt gestart...")
         
-        # Server configuratie
-        host = os.getenv('MCP_HOST', '127.0.0.1')
-        port = int(os.getenv('MCP_PORT', '8000'))
+        # Start MCP server met mcp.run()
+        await run(app)
         
-        logger.info(f"Server wordt gestart op {host}:{port}")
-        
-        # FastMCP server starten
-        # Note: In een echte implementatie zou hier uvicorn of een andere ASGI server gebruikt worden
-        # Voor nu is dit een placeholder die de basis server structuur toont
-        
-        # Placeholder voor server start - dit wordt aangepast wanneer tools worden toegevoegd
-        logger.info("Server gestart en klaar voor requests")
-        logger.info("Druk Ctrl+C om de server te stoppen")
-        
-        # Keep server running
-        try:
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("Server shutdown geïnitieerd door gebruiker")
-            
     except Exception as e:
         logger.error(f"Fatale fout bij server start: {str(e)}")
         sys.exit(1)

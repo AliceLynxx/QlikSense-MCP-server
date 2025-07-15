@@ -4,16 +4,9 @@ VOLTOOIDE STAPPEN:
 ✅ Stap 1: Basis project setup - Fundament gelegd met requirements.txt, .env-example en uitgebreide README.md documentatie
 ✅ Stap 2: QlikSense client implementatie - QlikClient klasse geïmplementeerd met session-based authenticatie, error handling, basis API methoden (get_apps, get_tasks, get_logs), environment variabelen ondersteuning en uitgebreide documentatie
 ✅ Stap 3: FastMCP server setup - FastMCP server geïmplementeerd in app.py met QlikMCPServer klasse, configuratie validatie, QlikClient integratie, async startup/shutdown handlers, logging configuratie en error handling
+✅ Stap 4: Apps lijst tool implementatie - Entry point gecorrigeerd naar mcp.run(), list_apps tool geregistreerd met @app.tool() decorator, QlikClient.get_apps() methode volledig geïmplementeerd met QRS API call, retry mechanisme, error handling en data formatting
 
 MUST-HAVE STAPPEN:
-
-4. Apps lijst tool implementatie (must-have)
-   Doel: Tool om beschikbare QlikSense apps op te vragen
-   Doelgroep: Gebruikers die willen weten welke apps beschikbaar zijn
-   Nut: Eerste stap in het werken met QlikSense - overzicht van beschikbare apps
-   Noodzaak: Basis functionaliteit voor app discovery
-   Bestanden: app.py (tool definitie), qlik_client.py (API methode)
-   Acties: list_apps tool registreren, QlikClient.get_apps() methode implementeren
 
 5. Taken lijst tool implementatie (must-have)
    Doel: Tool om beschikbare taken in QlikSense op te vragen
