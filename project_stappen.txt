@@ -1,14 +1,9 @@
 QlikSense MCP Server - Ontwikkelstappen
 
-MUST-HAVE STAPPEN:
+VOLTOOIDE STAPPEN:
+✅ Stap 1: Basis project setup - Fundament gelegd met requirements.txt, .env-example en uitgebreide README.md documentatie
 
-1. Basis project setup (must-have)
-   Doel: Fundament leggen voor de MCP server met alle benodigde configuratie bestanden
-   Doelgroep: Ontwikkelaars die de server willen installeren en configureren
-   Nut: Zorgt voor een werkende basis waarop verder gebouwd kan worden
-   Noodzaak: Zonder deze basis kunnen geen tools worden gedefinieerd
-   Bestanden: requirements.txt, .env-example, README.md
-   Acties: Python dependencies definiëren, configuratie template maken, documentatie schrijven
+MUST-HAVE STAPPEN:
 
 2. QlikSense client implementatie (must-have)
    Doel: Betrouwbare verbinding maken met QlikSense server via session-based authenticatie
