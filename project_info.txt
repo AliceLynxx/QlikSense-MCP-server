@@ -10,14 +10,14 @@ Project doel, nut en functie:
 - Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol
 
 Architectuur/modulestructuur:
-1. app.py - Hoofdmodule met FastMCP server en tool definities
+1. app.py - Minimale FastMCP server met directe tool registratie
 2. qlik_client.py - QlikSense client voor API communicatie
 3. .env-example - Configuratie template
 4. requirements.txt - Python dependencies
 5. README.md - Uitgebreide documentatie
 
 Per module status:
-1. app.py - Status: ✅ Voltooid, Pad: /app.py, Functionaliteit: FastMCP server setup met QlikMCPServer klasse, configuratie validatie, QlikClient integratie, async startup/shutdown handlers, logging configuratie, error handling en list_apps tool registratie, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
+1. app.py - Status: ✅ Voltooid (Vereenvoudigd), Pad: /app.py, Functionaliteit: Minimale FastMCP server implementatie met directe @mcp.tool() decorators, get_qlik_client() helper functie, eenvoudige error handling, list_apps tool, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
 2. qlik_client.py - Status: ✅ Voltooid, Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, volledige get_apps() implementatie met QRS API call, retry mechanisme, data formatting, basis API methoden (get_tasks, get_logs), environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
 3. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
 4. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, logging, etc., Afhankelijkheden: geen
@@ -26,5 +26,6 @@ Per module status:
 Voltooide stappen:
 - Stap 1: Basis project setup - Alle configuratie bestanden en documentatie zijn geïmplementeerd
 - Stap 2: QlikSense client implementatie - QlikClient klasse met session-based authenticatie, error handling en basis API methoden geïmplementeerd
-- Stap 3: FastMCP server setup - FastMCP server geïmplementeerd met QlikMCPServer klasse, configuratie validatie, QlikClient integratie, async startup/shutdown handlers, logging configuratie en error handling
-- Stap 4: Apps lijst tool implementatie - Entry point gecorrigeerd naar mcp.run(), list_apps tool geregistreerd met @app.tool() decorator, QlikClient.get_apps() methode volledig geïmplementeerd met QRS API call, retry mechanisme, error handling en data formatting
+- Stap 3: FastMCP server setup - FastMCP server geïmplementeerd met minimale structuur
+- Stap 4: Apps lijst tool implementatie - list_apps tool geregistreerd met directe @mcp.tool() decorator
+- Stap 5: App.py vereenvoudiging - Complexe QlikMCPServer klasse vervangen door minimale implementatie zoals Github-MCP-server
