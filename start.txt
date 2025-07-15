@@ -1,0 +1,24 @@
+QlikSense MCP Server
+
+Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties.
+
+Doel: 
+- Een eenvoudige MCP-server bouwen die kan communiceren met QlikSense
+- Tools beschikbaar maken voor het opvragen van apps, taken en logs
+- Simpele en overzichtelijke code structuur
+
+Doelgroep:
+- Ontwikkelaars die QlikSense willen integreren met MCP-compatibele tools
+- Data analisten die QlikSense functionaliteit willen automatiseren
+
+Functionaliteit:
+- Verbinding maken met QlikSense server via session-based authenticatie
+- Tools voor het ophalen van beschikbare apps
+- Tools voor het beheren van taken
+- Tools voor het uitlezen van logs
+
+Architectuur:
+- app.py: Hoofdbestand met FastMCP server en tool definities
+- qlik_client.py: QlikSense client voor API communicatie
+- .env-example: Voorbeeld configuratie bestand
+- requirements.txt: Python dependencies
