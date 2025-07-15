@@ -264,30 +264,111 @@ class QlikClient:
     
     def get_tasks(self) -> List[Dict[str, Any]]:
         """
-        Haal beschikbare taken op
+        Haal beschikbare QlikSense taken op
         
         Returns:
-            List[Dict[str, Any]]: Lijst van taak informatie
+            List[Dict[str, Any]]: Lijst van taak informatie met relevante metadata
             
         Raises:
             QlikAuthenticationError: Als authenticatie vereist is
             QlikConnectionError: Als request mislukt
-            
-        Note:
-            Deze methode is voorbereidend geïmplementeerd.
-            Volledige implementatie volgt in volgende development stappen.
         """
         self.logger.info("Ophalen van beschikbare taken")
         
-        # Placeholder implementatie - volledige implementatie volgt
         try:
-            # Voorbeeld endpoint - dit wordt aangepast op basis van daadwerkelijke QlikSense API
-            response = self._make_authenticated_request('GET', '/qrs/task')
-            return response.json()
+            # QRS API endpoint voor taken
+            response = self._make_authenticated_request('GET', '/qrs/task/full')
+            
+            # Parse response
+            tasks_data = response.json()
+            
+            # Format task data voor MCP tool
+            formatted_tasks = []
+            for task in tasks_data:
+                # Bepaal taak type
+                task_type = 'Unknown'
+                if task.get('taskType') == 0:
+                    task_type = 'Reload'
+                elif task.get('taskType') == 1:
+                    task_type = 'External Program'
+                elif task.get('taskType') == 2:
+                    task_type = 'User Sync'
+                
+                # Bepaal taak status
+                task_status = 'Unknown'
+                if task.get('enabled'):
+                    task_status = 'Enabled'
+                else:
+                    task_status = 'Disabled'
+                
+                # Haal app informatie op indien beschikbaar
+                app_info = {}
+                if task.get('app'):
+                    app_info = {
+                        'id': task.get('app', {}).get('id', ''),
+                        'name': task.get('app', {}).get('name', 'Onbekend')
+                    }
+                
+                # Haal trigger informatie op
+                triggers = []
+                for trigger in task.get('operational', {}).get('triggers', []):
+                    trigger_info = {
+                        'id': trigger.get('id', ''),
+                        'name': trigger.get('name', ''),
+                        'enabled': trigger.get('enabled', False),
+                        'type': trigger.get('type', 'Unknown')
+                    }
+                    triggers.append(trigger_info)
+                
+                # Haal laatste uitvoering informatie op
+                last_execution = {}
+                if task.get('operational', {}).get('lastExecutionResult'):
+                    exec_result = task.get('operational', {}).get('lastExecutionResult', {})
+                    last_execution = {
+                        'status': exec_result.get('status', 'Unknown'),
+                        'start_time': exec_result.get('startTime', ''),
+                        'stop_time': exec_result.get('stopTime', ''),
+                        'duration': exec_result.get('duration', 0),
+                        'details': exec_result.get('details', [])
+                    }
+                
+                formatted_task = {
+                    'id': task.get('id', ''),
+                    'name': task.get('name', 'Onbekend'),
+                    'type': task_type,
+                    'status': task_status,
+                    'enabled': task.get('enabled', False),
+                    'app': app_info,
+                    'created': task.get('createdDate', ''),
+                    'modified': task.get('modifiedDate', ''),
+                    'owner': task.get('owner', {}).get('name', 'Onbekend'),
+                    'triggers': triggers,
+                    'last_execution': last_execution,
+                    'max_retries': task.get('maxRetries', 0),
+                    'timeout': task.get('timeout', 0),
+                    'tags': [tag.get('name', '') for tag in task.get('tags', [])],
+                    'custom_properties': [
+                        {
+                            'name': prop.get('definition', {}).get('name', ''),
+                            'value': prop.get('value', '')
+                        } for prop in task.get('customProperties', [])
+                    ]
+                }
+                formatted_tasks.append(formatted_task)
+            
+            self.logger.info(f"Succesvol {len(formatted_tasks)} taken opgehaald")
+            return formatted_tasks
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+            elif e.response.status_code == 403:
+                raise QlikAuthenticationError("Onvoldoende rechten voor tasks endpoint")
+            else:
+                raise QlikConnectionError(f"HTTP fout bij ophalen taken: {e.response.status_code}")
         except Exception as e:
             self.logger.error(f"Fout bij ophalen taken: {str(e)}")
-            # Voorlopig lege lijst teruggeven
-            return []
+            raise QlikConnectionError(f"Onverwachte fout bij ophalen taken: {str(e)}")
     
     def get_logs(self, task_id: str) -> List[Dict[str, Any]]:
         """
