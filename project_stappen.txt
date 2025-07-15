@@ -1,0 +1,68 @@
+QlikSense MCP Server - Ontwikkelstappen
+
+MUST-HAVE STAPPEN:
+
+1. Basis project setup (must-have)
+   Doel: Fundament leggen voor de MCP server met alle benodigde configuratie bestanden
+   Doelgroep: Ontwikkelaars die de server willen installeren en configureren
+   Nut: Zorgt voor een werkende basis waarop verder gebouwd kan worden
+   Noodzaak: Zonder deze basis kunnen geen tools worden gedefinieerd
+   Bestanden: requirements.txt, .env-example, README.md
+   Acties: Python dependencies definiëren, configuratie template maken, documentatie schrijven
+
+2. QlikSense client implementatie (must-have)
+   Doel: Betrouwbare verbinding maken met QlikSense server via session-based authenticatie
+   Doelgroep: Ontwikkelaars die QlikSense API willen gebruiken
+   Nut: Maakt het mogelijk om QlikSense functionaliteit te benaderen vanuit Python
+   Noodzaak: Zonder client kunnen geen QlikSense operaties worden uitgevoerd
+   Bestanden: qlik_client.py
+   Acties: QlikClient klasse implementeren, session authenticatie, basis API methoden
+
+3. FastMCP server setup (must-have)
+   Doel: MCP server opzetten die tools kan registreren en uitvoeren
+   Doelgroep: Gebruikers van MCP-compatibele tools
+   Nut: Biedt gestandaardiseerde interface voor QlikSense functionaliteit
+   Noodzaak: Kern van het project - zonder MCP server geen tools beschikbaar
+   Bestanden: app.py
+   Acties: FastMCP importeren, server initialiseren, main functie implementeren
+
+4. Apps lijst tool implementatie (must-have)
+   Doel: Tool om beschikbare QlikSense apps op te vragen
+   Doelgroep: Gebruikers die willen weten welke apps beschikbaar zijn
+   Nut: Eerste stap in het werken met QlikSense - overzicht van beschikbare apps
+   Noodzaak: Basis functionaliteit voor app discovery
+   Bestanden: app.py (tool definitie), qlik_client.py (API methode)
+   Acties: list_apps tool registreren, QlikClient.get_apps() methode implementeren
+
+5. Taken lijst tool implementatie (must-have)
+   Doel: Tool om beschikbare taken in QlikSense op te vragen
+   Doelgroep: Gebruikers die taken willen monitoren en beheren
+   Nut: Inzicht in lopende en geplande taken
+   Noodzaak: Essentieel voor taakbeheer en monitoring
+   Bestanden: app.py (tool definitie), qlik_client.py (API methode)
+   Acties: list_tasks tool registreren, QlikClient.get_tasks() methode implementeren
+
+6. Logs uitlezen tool implementatie (must-have)
+   Doel: Tool om logs van taken uit te kunnen lezen
+   Doelgroep: Gebruikers die taken willen debuggen en monitoren
+   Nut: Troubleshooting en monitoring van taakuitvoering
+   Noodzaak: Cruciaal voor operationeel beheer
+   Bestanden: app.py (tool definitie), qlik_client.py (API methode)
+   Acties: get_task_logs tool registreren, QlikClient.get_logs() methode implementeren
+
+NICE-TO-HAVE STAPPEN:
+
+7. Error handling en logging (nice-to-have)
+   Doel: Robuuste error handling en logging toevoegen
+   Bestanden: app.py, qlik_client.py
+   Acties: Try-catch blokken, logging configuratie, error responses
+
+8. Configuratie validatie (nice-to-have)
+   Doel: Validatie van configuratie parameters
+   Bestanden: app.py
+   Acties: Environment variabelen valideren, duidelijke error messages
+
+9. Uitgebreide documentatie (nice-to-have)
+   Doel: Volledige gebruikersdocumentatie
+   Bestanden: README.md, docs/
+   Acties: Installatie instructies, gebruik voorbeelden, API documentatie
