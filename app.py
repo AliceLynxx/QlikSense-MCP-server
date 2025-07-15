@@ -60,5 +60,31 @@ def list_apps() -> List[Dict[str, Any]]:
     except Exception as e:
         raise Exception(f"Fout bij ophalen apps: {str(e)}")
 
+@mcp.tool()
+def list_tasks() -> List[Dict[str, Any]]:
+    """
+    Haal beschikbare QlikSense taken op
+    
+    Deze tool haalt alle beschikbare taken op uit de QlikSense omgeving,
+    inclusief reload taken, externe programma's en user sync taken.
+    Voor elke taak wordt relevante metadata getoond zoals status, 
+    gekoppelde app, triggers, en laatste uitvoering informatie.
+    
+    Returns:
+        List[Dict[str, Any]]: Lijst van beschikbare taken met metadata
+        
+    Raises:
+        Exception: Als het ophalen van taken mislukt
+    """
+    try:
+        client = get_qlik_client()
+        return client.get_tasks()
+    except QlikAuthenticationError as e:
+        raise Exception(f"Authenticatie fout: {str(e)}")
+    except QlikConnectionError as e:
+        raise Exception(f"Verbinding fout: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Fout bij ophalen taken: {str(e)}")
+
 if __name__ == "__main__":
     mcp.run()
