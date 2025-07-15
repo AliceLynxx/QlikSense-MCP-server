@@ -18,8 +18,15 @@ async def main():
 
         await page.goto(qlik_server + "/hub")
         print("Please log in to Qlik Sense in the browser window.")
-        print("After you have logged in, press Enter in this console to continue.")
-        input()
+
+        # Wacht tot de gebruiker is ingelogd en de hub zichtbaar is
+        try:
+            await page.wait_for_selector(".qmc-hub-content", timeout=300000) # 5 minuten timeout
+            print("Successfully logged in.")
+        except Exception as e:
+            print(f"Login timeout or error: {e}")
+            await browser.close()
+            return
 
         cookies = await context.cookies()
         session_cookie = next((c for c in cookies if c['name'] == 'X-Qlik-Session'), None)
