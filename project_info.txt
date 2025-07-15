@@ -17,8 +17,8 @@ Architectuur/modulestructuur:
 5. README.md - Uitgebreide documentatie
 
 Per module status:
-1. app.py - Status: ✅ Voltooid (Uitgebreid), Pad: /app.py, Functionaliteit: Minimale FastMCP server implementatie met directe @mcp.tool() decorators, get_qlik_client() helper functie, eenvoudige error handling, list_apps tool, list_tasks tool, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
-2. qlik_client.py - Status: ✅ Voltooid (Uitgebreid), Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, volledige get_apps() implementatie met QRS API call, volledige get_tasks() implementatie met /qrs/task/full endpoint en uitgebreide data formatting, retry mechanisme, data formatting, basis API methoden (get_logs), environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
+1. app.py - Status: ✅ Voltooid (Uitgebreid), Pad: /app.py, Functionaliteit: Minimale FastMCP server implementatie met directe @mcp.tool() decorators, get_qlik_client() helper functie, eenvoudige error handling, list_apps tool, list_tasks tool, get_task_logs tool, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
+2. qlik_client.py - Status: ✅ Voltooid (Uitgebreid), Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, volledige get_apps() implementatie met QRS API call, volledige get_tasks() implementatie met /qrs/task/full endpoint en uitgebreide data formatting, volledige get_logs() implementatie met /qrs/executionresult endpoint, retry mechanisme, data formatting, environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
 3. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
 4. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, logging, etc., Afhankelijkheden: geen
 5. README.md - Status: ✅ Voltooid, Pad: /README.md, Functionaliteit: Uitgebreide documentatie met installatie instructies, configuratie en gebruik, Afhankelijkheden: geen
@@ -30,3 +30,4 @@ Voltooide stappen:
 - Stap 4: Apps lijst tool implementatie - list_apps tool geregistreerd met directe @mcp.tool() decorator
 - Stap 5: App.py vereenvoudiging - Complexe QlikMCPServer klasse vervangen door minimale implementatie zoals Github-MCP-server
 - Stap 6: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call en uitgebreide data formatting
+- Stap 7: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie en consistent error handling
