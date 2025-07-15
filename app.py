@@ -61,6 +61,34 @@ def list_apps() -> List[Dict[str, Any]]:
         raise Exception(f"Fout bij ophalen apps: {str(e)}")
 
 @mcp.tool()
+def list_apps_with_session(session_id: str) -> List[Dict[str, Any]]:
+    """
+    Haal beschikbare QlikSense apps op met een bestaande sessie
+
+    Args:
+        session_id (str): De X-Qlik-Session cookie waarde
+
+    Returns:
+        List[Dict[str, Any]]: Lijst van beschikbare apps met metadata
+
+    Raises:
+        Exception: Als het ophalen van apps mislukt
+    """
+    try:
+        server = os.getenv("QLIK_SERVER")
+        if not server:
+            raise ValueError("QLIK_SERVER environment variabele is vereist")
+
+        client = QlikClient(server_url=server, session_id=session_id)
+        return client.get_apps()
+    except QlikAuthenticationError as e:
+        raise Exception(f"Authenticatie fout: {str(e)}")
+    except QlikConnectionError as e:
+        raise Exception(f"Verbinding fout: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Fout bij ophalen apps: {str(e)}")
+
+@mcp.tool()
 def list_tasks() -> List[Dict[str, Any]]:
     """
     Haal beschikbare QlikSense taken op

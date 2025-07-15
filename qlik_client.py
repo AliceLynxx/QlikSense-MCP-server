@@ -44,8 +44,9 @@ class QlikClient:
         max_retries (int): Maximum aantal herhalingen bij fouten
     """
     
-    def __init__(self, server_url: Optional[str] = None, username: Optional[str] = None, 
-                 app_id: Optional[str] = None, timeout: int = 30, max_retries: int = 3):
+    def __init__(self, server_url: Optional[str] = None, username: Optional[str] = None,
+                 app_id: Optional[str] = None, timeout: int = 30, max_retries: int = 3,
+                 session_id: Optional[str] = None):
         """
         Initialiseer QlikClient
         
@@ -55,6 +56,7 @@ class QlikClient:
             app_id: Standaard app ID (optioneel, gebruikt APP_ID env var)
             timeout: Request timeout in seconden
             max_retries: Maximum aantal herhalingen bij fouten
+            session_id: Bestaande QlikSense sessie ID (optioneel)
             
         Raises:
             QlikConnectionError: Als vereiste configuratie ontbreekt
@@ -72,15 +74,13 @@ class QlikClient:
         # Valideer vereiste configuratie
         if not self.server_url:
             raise QlikConnectionError("Server URL is vereist (QLIK_SERVER environment variabele)")
-        if not self.username:
-            raise QlikConnectionError("Gebruikersnaam is vereist (QLIK_USER environment variabele)")
-            
+
         # Normaliseer server URL
         self.server_url = self.server_url.rstrip('/')
         
         # Initialiseer sessie
         self.session = requests.Session()
-        self.session_id: Optional[str] = None
+        self.session_id: Optional[str] = session_id
         
         # SSL verificatie configuratie
         ssl_verify = os.getenv('SSL_VERIFY', 'true').lower() == 'true'
@@ -90,7 +90,16 @@ class QlikClient:
         self.logger = logging.getLogger(__name__)
         
         self.logger.info(f"QlikClient geïnitialiseerd voor server: {self.server_url}")
-    
+
+        if self.session_id:
+            self._set_session_cookie()
+
+    def _set_session_cookie(self):
+        """Stel de sessiecookie in voor de requests sessie."""
+        if self.session_id:
+            self.session.cookies.set('X-Qlik-Session', self.session_id)
+            self.logger.info("Sessiecookie ingesteld voor QlikClient")
+
     def authenticate(self) -> bool:
         """
         Voer session-based authenticatie uit
@@ -105,6 +114,13 @@ class QlikClient:
             QlikAuthenticationError: Als authenticatie mislukt
             QlikConnectionError: Als verbinding mislukt
         """
+        if self.session_id:
+            self.logger.info("Authenticatie overgeslagen, bestaande sessie ID wordt gebruikt")
+            return True
+
+        if not self.username:
+            raise QlikAuthenticationError("Gebruikersnaam is vereist voor authenticatie")
+
         try:
             # Stel authenticatie headers in
             headers = {
