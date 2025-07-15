@@ -3,16 +3,9 @@ QlikSense MCP Server - Ontwikkelstappen
 VOLTOOIDE STAPPEN:
 ✅ Stap 1: Basis project setup - Fundament gelegd met requirements.txt, .env-example en uitgebreide README.md documentatie
 ✅ Stap 2: QlikSense client implementatie - QlikClient klasse geïmplementeerd met session-based authenticatie, error handling, basis API methoden (get_apps, get_tasks, get_logs), environment variabelen ondersteuning en uitgebreide documentatie
+✅ Stap 3: FastMCP server setup - FastMCP server geïmplementeerd in app.py met QlikMCPServer klasse, configuratie validatie, QlikClient integratie, async startup/shutdown handlers, logging configuratie en error handling
 
 MUST-HAVE STAPPEN:
-
-3. FastMCP server setup (must-have)
-   Doel: MCP server opzetten die tools kan registreren en uitvoeren
-   Doelgroep: Gebruikers van MCP-compatibele tools
-   Nut: Biedt gestandaardiseerde interface voor QlikSense functionaliteit
-   Noodzaak: Kern van het project - zonder MCP server geen tools beschikbaar
-   Bestanden: app.py
-   Acties: FastMCP importeren, server initialiseren, main functie implementeren
 
 4. Apps lijst tool implementatie (must-have)
    Doel: Tool om beschikbare QlikSense apps op te vragen
