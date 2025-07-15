@@ -1,0 +1,53 @@
+QlikSense MCP Server - Repository Summary
+
+PROJECTSTRUCTUUR:
+Dit is een Python-gebaseerde MCP (Model Context Protocol) server voor QlikSense integratie.
+
+BESTANDEN OVERZICHT:
+
+Hoofdmap (/):
+- start.txt (1.2KB) - Project beschrijving en doelstellingen
+- project_info.txt (1.8KB) - Gedetailleerde project informatie en module architectuur  
+- project_stappen.txt (3.1KB) - Ontwikkelstappen en roadmap
+- repository_summary.txt (dit bestand) - Repository overzicht en architectuur
+
+Te ontwikkelen bestanden:
+- app.py - Hoofdmodule met FastMCP server en tool definities
+- qlik_client.py - QlikSense API client met session-based authenticatie
+- requirements.txt - Python package dependencies
+- .env-example - Configuratie template
+- README.md - Gebruikersdocumentatie
+
+ARCHITECTUUR:
+Het project volgt een eenvoudige modulaire opzet:
+
+1. Core Module (app.py):
+   - FastMCP server initialisatie
+   - Tool registratie en definitie
+   - Main entry point
+
+2. Client Module (qlik_client.py):
+   - QlikSense API communicatie
+   - Session-based authenticatie
+   - API methoden voor apps, taken en logs
+
+3. Configuratie:
+   - Environment variabelen voor server, user en app_id
+   - Session-based authenticatie via X-Qlik-User header
+
+BELANGRIJKSTE MODULES EN RELATIES:
+- app.py → qlik_client.py (gebruikt QlikClient voor API calls)
+- qlik_client.py → requests (voor HTTP communicatie)
+- app.py → mcp.server.fastmcp (voor MCP server functionaliteit)
+
+TOOLS DIE BESCHIKBAAR KOMEN:
+1. list_apps - Opvragen beschikbare QlikSense apps
+2. list_tasks - Opvragen beschikbare taken
+3. get_task_logs - Uitlezen van taak logs
+
+AUTHENTICATIE FLOW:
+1. Environment variabelen laden (QLIK_SERVER, QLIK_USER, APP_ID)
+2. Session aanmaken via requests.Session()
+3. GET request naar /hub met X-Qlik-User header
+4. Session cookie (X-Qlik-Session) opslaan
+5. QlikClient initialiseren met server, app_id en session_id
