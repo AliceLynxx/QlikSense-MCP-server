@@ -374,34 +374,164 @@ class QlikClient:
         """
         Haal logs op van specifieke taak
         
+        Deze methode haalt uitvoeringsresultaten (execution results) op van een specifieke
+        taak via de QRS API. De logs bevatten informatie over taakuitvoeringen inclusief
+        status, timestamps, duur, details en eventuele foutmeldingen.
+        
         Args:
-            task_id: ID van de taak
+            task_id: ID van de taak waarvoor logs opgehaald moeten worden
             
         Returns:
-            List[Dict[str, Any]]: Lijst van log entries
-            
+            List[Dict[str, Any]]: Lijst van log entries met relevante metadata:
+                - id: Unieke ID van de log entry
+                - task_id: ID van de bijbehorende taak
+                - task_name: Naam van de bijbehorende taak
+                - status: Status van de uitvoering (Success, Failed, etc.)
+                - start_time: Start timestamp van de uitvoering
+                - stop_time: Stop timestamp van de uitvoering
+                - duration: Duur van de uitvoering in milliseconden
+                - details: Gedetailleerde informatie over de uitvoering
+                - script_log: Script log entries indien beschikbaar
+                - error_message: Foutmelding indien van toepassing
+                - created: Aanmaakdatum van de log entry
+                - modified: Laatste wijzigingsdatum van de log entry
+                
         Raises:
+            ValueError: Als task_id leeg of None is
             QlikAuthenticationError: Als authenticatie vereist is
             QlikConnectionError: Als request mislukt
-            
-        Note:
-            Deze methode is voorbereidend geïmplementeerd.
-            Volledige implementatie volgt in volgende development stappen.
         """
         self.logger.info(f"Ophalen van logs voor taak: {task_id}")
         
-        if not task_id:
-            raise ValueError("Task ID is vereist")
+        # Valideer input
+        if not task_id or not task_id.strip():
+            raise ValueError("Task ID is vereist en mag niet leeg zijn")
         
-        # Placeholder implementatie - volledige implementatie volgt
+        task_id = task_id.strip()
+        
         try:
-            # Voorbeeld endpoint - dit wordt aangepast op basis van daadwerkelijke QlikSense API
-            response = self._make_authenticated_request('GET', f'/qrs/executionresult?filter=TaskId eq {task_id}')
-            return response.json()
+            # QRS API endpoint voor execution results gefilterd op TaskId
+            # Gebruik URL encoding voor de filter parameter
+            filter_param = f"TaskId eq '{task_id}'"
+            endpoint = f"/qrs/executionresult?filter={filter_param}"
+            
+            self.logger.debug(f"Ophalen execution results met endpoint: {endpoint}")
+            
+            response = self._make_authenticated_request('GET', endpoint)
+            
+            # Parse response
+            execution_results = response.json()
+            
+            self.logger.debug(f"Ontvangen {len(execution_results)} execution results voor taak {task_id}")
+            
+            # Format execution results voor MCP tool
+            formatted_logs = []
+            for result in execution_results:
+                # Bepaal status string
+                status_mapping = {
+                    0: 'NeverStarted',
+                    1: 'Triggered',
+                    2: 'Started',
+                    3: 'Queued',
+                    4: 'AbortInitiated',
+                    5: 'Aborting',
+                    6: 'Aborted',
+                    7: 'FinishedSuccess',
+                    8: 'FinishedFail',
+                    9: 'Skipped',
+                    10: 'Retry',
+                    11: 'Error',
+                    12: 'Reset'
+                }
+                
+                status_code = result.get('status', -1)
+                status_text = status_mapping.get(status_code, f'Unknown({status_code})')
+                
+                # Haal taak informatie op indien beschikbaar
+                task_info = result.get('task', {})
+                task_name = task_info.get('name', 'Onbekend') if task_info else 'Onbekend'
+                
+                # Parse details array voor meer informatie
+                details = result.get('details', [])
+                script_log_entries = []
+                error_messages = []
+                
+                for detail in details:
+                    detail_message = detail.get('message', '')
+                    detail_type = detail.get('detailType', 0)
+                    
+                    # DetailType mapping (gebaseerd op QlikSense documentatie):
+                    # 0 = Information, 1 = Warning, 2 = Error
+                    if detail_type == 2:  # Error
+                        error_messages.append(detail_message)
+                    else:
+                        script_log_entries.append({
+                            'timestamp': detail.get('timestamp', ''),
+                            'type': 'Warning' if detail_type == 1 else 'Information',
+                            'message': detail_message
+                        })
+                
+                # Bereken duur indien start en stop tijd beschikbaar zijn
+                duration_ms = 0
+                start_time = result.get('startTime', '')
+                stop_time = result.get('stopTime', '')
+                
+                if start_time and stop_time:
+                    try:
+                        from datetime import datetime
+                        start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                        stop_dt = datetime.fromisoformat(stop_time.replace('Z', '+00:00'))
+                        duration_ms = int((stop_dt - start_dt).total_seconds() * 1000)
+                    except Exception as e:
+                        self.logger.warning(f"Kon duur niet berekenen: {str(e)}")
+                        duration_ms = result.get('duration', 0)
+                else:
+                    duration_ms = result.get('duration', 0)
+                
+                formatted_log = {
+                    'id': result.get('id', ''),
+                    'task_id': task_id,
+                    'task_name': task_name,
+                    'status': status_text,
+                    'status_code': status_code,
+                    'start_time': start_time,
+                    'stop_time': stop_time,
+                    'duration_ms': duration_ms,
+                    'duration_formatted': f"{duration_ms / 1000:.2f}s" if duration_ms > 0 else "0s",
+                    'details_count': len(details),
+                    'script_log': script_log_entries,
+                    'error_messages': error_messages,
+                    'has_errors': len(error_messages) > 0,
+                    'created': result.get('createdDate', ''),
+                    'modified': result.get('modifiedDate', ''),
+                    'execution_id': result.get('executionId', ''),
+                    'session_id': result.get('sessionId', ''),
+                    'raw_details': details  # Voor debugging doeleinden
+                }
+                formatted_logs.append(formatted_log)
+            
+            # Sorteer logs op start tijd (nieuwste eerst)
+            formatted_logs.sort(key=lambda x: x.get('start_time', ''), reverse=True)
+            
+            self.logger.info(f"Succesvol {len(formatted_logs)} log entries opgehaald voor taak {task_id}")
+            return formatted_logs
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+            elif e.response.status_code == 403:
+                raise QlikAuthenticationError("Onvoldoende rechten voor execution results endpoint")
+            elif e.response.status_code == 404:
+                self.logger.warning(f"Geen execution results gevonden voor taak {task_id}")
+                return []  # Geen logs gevonden is geen fout
+            else:
+                raise QlikConnectionError(f"HTTP fout bij ophalen logs voor taak {task_id}: {e.response.status_code}")
+        except ValueError:
+            # Re-raise validation errors
+            raise
         except Exception as e:
             self.logger.error(f"Fout bij ophalen logs voor taak {task_id}: {str(e)}")
-            # Voorlopig lege lijst teruggeven
-            return []
+            raise QlikConnectionError(f"Onverwachte fout bij ophalen logs voor taak {task_id}: {str(e)}")
     
     def is_authenticated(self) -> bool:
         """
