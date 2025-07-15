@@ -18,10 +18,11 @@ Architectuur/modulestructuur:
 
 Per module status:
 1. app.py - Status: Te ontwikkelen, Pad: /app.py, Functionaliteit: FastMCP server setup en tool registratie, Afhankelijkheden: qlik_client.py
-2. qlik_client.py - Status: Te ontwikkelen, Pad: /qlik_client.py, Functionaliteit: QlikSense API client met session authenticatie, Afhankelijkheden: requests
+2. qlik_client.py - Status: ✅ Voltooid, Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, basis API methoden (get_apps, get_tasks, get_logs), environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
 3. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
 4. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, logging, etc., Afhankelijkheden: geen
 5. README.md - Status: ✅ Voltooid, Pad: /README.md, Functionaliteit: Uitgebreide documentatie met installatie instructies, configuratie en gebruik, Afhankelijkheden: geen
 
 Voltooide stappen:
 - Stap 1: Basis project setup - Alle configuratie bestanden en documentatie zijn geïmplementeerd
+- Stap 2: QlikSense client implementatie - QlikClient klasse met session-based authenticatie, error handling en basis API methoden geïmplementeerd
