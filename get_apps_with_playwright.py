@@ -1,34 +1,25 @@
-import asyncio
-from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
 import os
 from dotenv import load_dotenv
-from app import list_apps_with_session
+from app import list_apps_with_session  # Zorg dat deze functie ook sync is of pas aan
 
-async def main():
+def main():
     load_dotenv()
     qlik_server = os.getenv("QLIK_SERVER")
     if not qlik_server:
         print("QLIK_SERVER environment variable not set.")
         return
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        context = await browser.new_context()
-        page = await context.new_page()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context(http_credentials={"username": os.getenv("QLIK_USERNAME"), "password": os.getenv("QLIK_PASSWORD")},
+                                      ignore_https_errors=True)
+        page = context.new_page()
 
-        await page.goto(qlik_server + "/hub")
+        page.goto(qlik_server + "/hub", wait_until='domcontentloaded')
         print("Please log in to Qlik Sense in the browser window.")
 
-        # Wacht tot de gebruiker is ingelogd en de hub zichtbaar is
-        try:
-            await page.wait_for_selector(".qmc-hub-content", timeout=300000) # 5 minuten timeout
-            print("Successfully logged in.")
-        except Exception as e:
-            print(f"Login timeout or error: {e}")
-            await browser.close()
-            return
-
-        cookies = await context.cookies()
+        cookies = context.cookies()
         session_cookie = next((c for c in cookies if c['name'] == 'X-Qlik-Session'), None)
 
         if session_cookie:
@@ -36,7 +27,7 @@ async def main():
             print(f"Found session ID: {session_id}")
 
             try:
-                apps = await list_apps_with_session(session_id)
+                apps = list_apps_with_session(session_id)  # Moet dan ook sync zijn
                 print("Successfully retrieved apps:")
                 for app in apps:
                     print(f"- {app['name']} (ID: {app['id']})")
@@ -45,7 +36,7 @@ async def main():
         else:
             print("Could not find session cookie. Make sure you are logged in.")
 
-        await browser.close()
+        browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
