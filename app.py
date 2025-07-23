@@ -1,11 +1,12 @@
 """
 QlikSense MCP Server Application
 
-Minimale implementatie van een MCP server voor QlikSense functionaliteit.
+Browser-based implementatie van een MCP server voor QlikSense functionaliteit.
+Gebruikt BrowserQlikClient voor persistent browser context authenticatie.
 """
 
 from mcp.server.fastmcp import FastMCP
-from qlik_client import QlikClient, QlikAuthenticationError, QlikConnectionError
+from browser_qlik_client import BrowserQlikClient, QlikAuthenticationError, QlikConnectionError
 import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
@@ -14,35 +15,61 @@ load_dotenv()
 
 mcp = FastMCP("QlikSense MCP Server")
 
-def get_qlik_client() -> QlikClient:
+# Global browser client instance voor hergebruik
+_browser_client: BrowserQlikClient = None
+
+def get_browser_qlik_client() -> BrowserQlikClient:
     """
-    Maak en authenticeer een QlikClient instantie
+    Maak en authenticeer een BrowserQlikClient instantie
+    
+    Hergebruikt bestaande client instance voor efficiency en persistent browser context.
     
     Returns:
-        QlikClient: Geauthenticeerde QlikClient instantie
+        BrowserQlikClient: Geauthenticeerde BrowserQlikClient instantie
         
     Raises:
         ValueError: Als configuratie ontbreekt
         Exception: Als authenticatie mislukt
     """
+    global _browser_client
+    
     # Valideer configuratie
     server = os.getenv("QLIK_SERVER")
-    user = os.getenv("QLIK_USER")
+    username = os.getenv("QLIK_USERNAME")
+    password = os.getenv("QLIK_PASSWORD")
     
-    if not server or not user:
-        raise ValueError("QLIK_SERVER en QLIK_USER environment variabelen zijn vereist")
+    if not server or not username or not password:
+        raise ValueError("QLIK_SERVER, QLIK_USERNAME en QLIK_PASSWORD environment variabelen zijn vereist")
     
-    # Maak en authenticeer client
-    client = QlikClient()
-    if not client.authenticate():
-        raise Exception("QlikSense authenticatie mislukt")
+    # Hergebruik bestaande client indien beschikbaar en geauthenticeerd
+    if _browser_client and _browser_client.is_authenticated():
+        return _browser_client
     
-    return client
+    # Maak nieuwe client en authenticeer
+    try:
+        if _browser_client:
+            _browser_client.close()  # Sluit oude client
+            
+        _browser_client = BrowserQlikClient()
+        if not _browser_client.authenticate():
+            raise Exception("QlikSense browser authenticatie mislukt")
+        
+        return _browser_client
+        
+    except Exception as e:
+        if _browser_client:
+            _browser_client.close()
+            _browser_client = None
+        raise
 
 @mcp.tool()
 def list_apps() -> List[Dict[str, Any]]:
     """
-    Haal beschikbare QlikSense apps op
+    Haal beschikbare QlikSense apps op via browser context
+    
+    Deze tool gebruikt een persistent browser context voor authenticatie,
+    waardoor alle QlikSense API calls gebruik maken van dezelfde geauthenticeerde
+    sessie. Dit zorgt voor betrouwbare communicatie met QlikSense.
     
     Returns:
         List[Dict[str, Any]]: Lijst van beschikbare apps met metadata
@@ -51,7 +78,7 @@ def list_apps() -> List[Dict[str, Any]]:
         Exception: Als het ophalen van apps mislukt
     """
     try:
-        client = get_qlik_client()
+        client = get_browser_qlik_client()
         return client.get_apps()
     except QlikAuthenticationError as e:
         raise Exception(f"Authenticatie fout: {str(e)}")
@@ -63,23 +90,24 @@ def list_apps() -> List[Dict[str, Any]]:
 @mcp.tool()
 def list_apps_with_session(session_id: str) -> List[Dict[str, Any]]:
     """
-    Haal beschikbare QlikSense apps op met een bestaande sessie
-
+    Haal beschikbare QlikSense apps op met browser context
+    
+    Deze functie is behouden voor backward compatibility, maar gebruikt nu
+    de browser-based client voor alle API calls. De session_id parameter
+    wordt genegeerd omdat de browser context de volledige sessie staat beheert.
+    
     Args:
-        session_id (str): De X-Qlik-Session cookie waarde
-
+        session_id (str): Genegeerd - browser context beheert sessie automatisch
+        
     Returns:
         List[Dict[str, Any]]: Lijst van beschikbare apps met metadata
-
+        
     Raises:
         Exception: Als het ophalen van apps mislukt
     """
     try:
-        server = os.getenv("QLIK_SERVER")
-        if not server:
-            raise ValueError("QLIK_SERVER environment variabele is vereist")
-
-        client = QlikClient(server_url=server, session_id=session_id)
+        # Gebruik browser client in plaats van session-based approach
+        client = get_browser_qlik_client()
         return client.get_apps()
     except QlikAuthenticationError as e:
         raise Exception(f"Authenticatie fout: {str(e)}")
@@ -91,12 +119,14 @@ def list_apps_with_session(session_id: str) -> List[Dict[str, Any]]:
 @mcp.tool()
 def list_tasks() -> List[Dict[str, Any]]:
     """
-    Haal beschikbare QlikSense taken op
+    Haal beschikbare QlikSense taken op via browser context
     
     Deze tool haalt alle beschikbare taken op uit de QlikSense omgeving,
     inclusief reload taken, externe programma's en user sync taken.
     Voor elke taak wordt relevante metadata getoond zoals status, 
     gekoppelde app, triggers, en laatste uitvoering informatie.
+    
+    Gebruikt browser context voor betrouwbare authenticatie en API communicatie.
     
     Returns:
         List[Dict[str, Any]]: Lijst van beschikbare taken met metadata
@@ -105,7 +135,7 @@ def list_tasks() -> List[Dict[str, Any]]:
         Exception: Als het ophalen van taken mislukt
     """
     try:
-        client = get_qlik_client()
+        client = get_browser_qlik_client()
         return client.get_tasks()
     except QlikAuthenticationError as e:
         raise Exception(f"Authenticatie fout: {str(e)}")
@@ -117,13 +147,15 @@ def list_tasks() -> List[Dict[str, Any]]:
 @mcp.tool()
 def get_task_logs(task_id: str) -> List[Dict[str, Any]]:
     """
-    Haal logs op van specifieke QlikSense taak
+    Haal logs op van specifieke QlikSense taak via browser context
     
     Deze tool haalt gedetailleerde uitvoeringsresultaten (execution results) op
-    van een specifieke QlikSense taak. De logs bevatten informatie over alle
-    uitvoeringen van de taak, inclusief status, timestamps, duur, script logs,
-    en eventuele foutmeldingen. Dit is essentieel voor troubleshooting en
-    monitoring van taakuitvoeringen.
+    van een specifieke QlikSense taak via browser context. De logs bevatten 
+    informatie over alle uitvoeringen van de taak, inclusief status, timestamps, 
+    duur, script logs, en eventuele foutmeldingen. 
+    
+    De browser context zorgt voor betrouwbare authenticatie en sessie beheer,
+    waardoor alle API calls gebruik maken van dezelfde geauthenticeerde sessie.
     
     De tool is nuttig voor:
     - Ontwikkelaars die QlikSense taken willen debuggen
@@ -179,7 +211,7 @@ def get_task_logs(task_id: str) -> List[Dict[str, Any]]:
             raise ValueError("Task ID mag niet leeg zijn")
         
         # Maak client en haal logs op
-        client = get_qlik_client()
+        client = get_browser_qlik_client()
         logs = client.get_logs(task_id)
         
         return logs
@@ -193,5 +225,20 @@ def get_task_logs(task_id: str) -> List[Dict[str, Any]]:
     except Exception as e:
         raise Exception(f"Fout bij ophalen logs voor taak {task_id}: {str(e)}")
 
+# Cleanup functie voor graceful shutdown
+def cleanup_browser_client():
+    """Sluit browser client bij shutdown"""
+    global _browser_client
+    if _browser_client:
+        _browser_client.close()
+        _browser_client = None
+
+# Register cleanup functie
+import atexit
+atexit.register(cleanup_browser_client)
+
 if __name__ == "__main__":
-    mcp.run()
+    try:
+        mcp.run()
+    finally:
+        cleanup_browser_client()
