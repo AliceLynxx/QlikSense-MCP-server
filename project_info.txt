@@ -1,34 +1,33 @@
 QlikSense MCP Server - Project Informatie
 
 Projectomschrijving:
-Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools met browser-based authenticatie.
+Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools met async browser-based authenticatie.
 
 
 Project doel, nut en functie:
-- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt via Playwright authenticatie
+- Doel: Een eenvoudige en betrouwbare async MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt via Playwright authenticatie
 - Doelgroep: Ontwikkelaars die QlikSense willen integreren met MCP-compatibele tools en data analisten die QlikSense functionaliteit willen automatiseren
-- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten met betrouwbare browser-based authenticatie
-- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met session-based authenticatie
+- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten met betrouwbare async browser-based authenticatie voor betere performance
+- Functie: Biedt gestandaardiseerde async tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met session-based authenticatie
 
 Architectuur/modulestructuur:
-1. app.py - Simpele FastMCP server met tool definities
+1. app.py - Async FastMCP server met async tool definities
 2. qlik_client.py - Eenvoudige QlikSense client met basis functionaliteit
-3. browser_manager.py - Browser lifecycle management met sync_playwright
+3. browser_manager.py - Async browser lifecycle management met async_playwright
 4. .env-example - Configuratie template
 5. requirements.txt - Python dependencies
 6. README.md - Documentatie
 
 Per module status:
-1. app.py - Status: ✅ Vereenvoudigd, Pad: /app.py, Functionaliteit: Simpele FastMCP server met list_apps, list_tasks, get_task_logs tools. Elke tool start browser, haalt data op via QlikClient, Afhankelijkheden: browser_manager.py, qlik_client.py, mcp.server.fastmcp
+1. app.py - Status: ✅ Async geconverteerd, Pad: /app.py, Functionaliteit: Async FastMCP server met async list_apps, list_tasks, get_task_logs tools. Elke tool start async browser, haalt data op via QlikClient met proper error handling, Afhankelijkheden: browser_manager.py, qlik_client.py, mcp.server.fastmcp
 
 2. qlik_client.py - Status: ✅ Vereenvoudigd, Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met server, username, session_id parameters. Simpele methodes: list_apps(), list_tasks(), get_task_logs(). Directe requests calls zonder complexe error handling, Afhankelijkheden: requests, urllib3, websocket
 
-3. browser_manager.py - Status: ✅ Vereenvoudigd, Pad: /browser_manager.py, Functionaliteit: BrowserManager klasse met get_session_id() methode. Gebruikt sync_playwright met http_credentials context. Start browser, authenticeer, haal session_id op, sluit browser, Afhankelijkheden: playwright, python-dotenv
+3. browser_manager.py - Status: ✅ Async geconverteerd, Pad: /browser_manager.py, Functionaliteit: AsyncBrowserManager klasse met async get_session_id() methode. Gebruikt async_playwright met http_credentials context. Start async browser, authenticeer, haal session_id op, sluit browser, Afhankelijkheden: playwright, python-dotenv
 
 4. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met QLIK_SERVER, QLIK_USERNAME, QLIK_PASSWORD, Afhankelijkheden: geen
 
 5. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies, Afhankelijkheden: geen
 
-6. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie voor vereenvoudigde implementatie, Afhankelijkheden: geen
-
+6. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie voor async implementatie, Afhankelijkheden: geen
 
