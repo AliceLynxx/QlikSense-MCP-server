@@ -7,6 +7,7 @@ import requests
 import urllib3
 import websocket
 import ssl
+import json
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -24,17 +25,22 @@ class QlikClient:
             f"X-Qlik-User: {username}"
         ]
     
+    def _get_headers(self, xrfkey="0123456789abcdef"):
+        """Helper method to get standard headers for QRS API calls."""
+        return {
+            "X-Qlik-User": self.user,
+            "X-Qlik-Xrfkey": xrfkey,
+            "Cookie": f"X-Qlik-Session={self.session_id}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+    
     def list_apps(self) -> list:
         """Retrieve a list of available apps (IDs and names) from Qlik Sense."""
         xrfkey = "0123456789abcdef"  # Must be 16 characters
         url = f"{self.server}/qrs/app/full?xrfkey={xrfkey}"
 
-        headers = {
-            "X-Qlik-User": self.user,
-            "X-Qlik-Xrfkey": xrfkey,
-            "Cookie": f"X-Qlik-Session={self.session_id}",
-            "Accept": "application/json"
-        }
+        headers = self._get_headers(xrfkey)
 
         response = requests.get(url, headers=headers, verify=False)
 
@@ -58,12 +64,7 @@ class QlikClient:
         xrfkey = "0123456789abcdef"
         url = f"{self.server}/qrs/task/full?xrfkey={xrfkey}"
 
-        headers = {
-            "X-Qlik-User": self.user,
-            "X-Qlik-Xrfkey": xrfkey,
-            "Cookie": f"X-Qlik-Session={self.session_id}",
-            "Accept": "application/json"
-        }
+        headers = self._get_headers(xrfkey)
 
         response = requests.get(url, headers=headers, verify=False)
 
@@ -86,12 +87,7 @@ class QlikClient:
         xrfkey = "0123456789abcdef"
         url = f"{self.server}/qrs/executionresult/full?filter=executionId eq '{task_id}'&xrfkey={xrfkey}"
 
-        headers = {
-            "X-Qlik-User": self.user,
-            "X-Qlik-Xrfkey": xrfkey,
-            "Cookie": f"X-Qlik-Session={self.session_id}",
-            "Accept": "application/json"
-        }
+        headers = self._get_headers(xrfkey)
 
         response = requests.get(url, headers=headers, verify=False)
 
@@ -109,6 +105,204 @@ class QlikClient:
             }
             for log in logs
         ]
+
+    def get_app_script(self, app_id: str) -> str:
+        """Retrieve the complete script of a specific QlikSense app."""
+        xrfkey = "0123456789abcdef"
+        url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+
+        response = requests.get(url, headers=headers, verify=False)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch app script: {response.status_code} {response.text}")
+        
+        app_data = response.json()
+        return app_data.get("script", "")
+
+    def get_app_metadata(self, app_id: str) -> dict:
+        """Retrieve measures, dimensions and sheets from a specific app."""
+        xrfkey = "0123456789abcdef"
+        
+        # Get measures
+        measures_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'measure'&xrfkey={xrfkey}"
+        # Get dimensions  
+        dimensions_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'dimension'&xrfkey={xrfkey}"
+        # Get sheets
+        sheets_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'sheet'&xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+        
+        metadata = {
+            "measures": [],
+            "dimensions": [],
+            "sheets": []
+        }
+
+        try:
+            # Fetch measures
+            response = requests.get(measures_url, headers=headers, verify=False)
+            if response.status_code == 200:
+                measures = response.json()
+                metadata["measures"] = [
+                    {
+                        "id": measure["id"],
+                        "name": measure.get("name", ""),
+                        "description": measure.get("description", ""),
+                        "expression": measure.get("properties", {}).get("qMeasure", {}).get("qDef", "")
+                    }
+                    for measure in measures
+                ]
+
+            # Fetch dimensions
+            response = requests.get(dimensions_url, headers=headers, verify=False)
+            if response.status_code == 200:
+                dimensions = response.json()
+                metadata["dimensions"] = [
+                    {
+                        "id": dimension["id"],
+                        "name": dimension.get("name", ""),
+                        "description": dimension.get("description", ""),
+                        "expression": dimension.get("properties", {}).get("qDim", {}).get("qFieldDefs", [])
+                    }
+                    for dimension in dimensions
+                ]
+
+            # Fetch sheets
+            response = requests.get(sheets_url, headers=headers, verify=False)
+            if response.status_code == 200:
+                sheets = response.json()
+                metadata["sheets"] = [
+                    {
+                        "id": sheet["id"],
+                        "name": sheet.get("name", ""),
+                        "description": sheet.get("description", ""),
+                        "rank": sheet.get("properties", {}).get("rank", 0)
+                    }
+                    for sheet in sheets
+                ]
+
+        except Exception as e:
+            raise Exception(f"Failed to fetch app metadata: {str(e)}")
+
+        return metadata
+
+    def update_app_script(self, app_id: str, script: str) -> dict:
+        """Update the script of a specific app with a new version."""
+        xrfkey = "0123456789abcdef"
+        
+        # First get the current app data
+        get_url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
+        headers = self._get_headers(xrfkey)
+
+        response = requests.get(get_url, headers=headers, verify=False)
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch current app data: {response.status_code} {response.text}")
+        
+        app_data = response.json()
+        
+        # Update the script
+        app_data["script"] = script
+        
+        # PUT the updated app data back
+        put_url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
+        
+        response = requests.put(put_url, headers=headers, data=json.dumps(app_data), verify=False)
+        
+        if response.status_code not in [200, 201]:
+            raise Exception(f"Failed to update app script: {response.status_code} {response.text}")
+        
+        return {
+            "success": True,
+            "message": f"Script successfully updated for app {app_id}",
+            "app_id": app_id
+        }
+
+    def get_app_variables(self, app_id: str) -> list:
+        """Retrieve variables from a specific app."""
+        xrfkey = "0123456789abcdef"
+        url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'variable'&xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+
+        response = requests.get(url, headers=headers, verify=False)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch app variables: {response.status_code} {response.text}")
+        
+        variables = response.json()
+        return [
+            {
+                "id": var["id"],
+                "name": var.get("name", ""),
+                "definition": var.get("properties", {}).get("qDefinition", ""),
+                "description": var.get("description", "")
+            }
+            for var in variables
+        ]
+
+    def reload_app(self, app_id: str) -> dict:
+        """Start a reload of a specific app."""
+        xrfkey = "0123456789abcdef"
+        url = f"{self.server}/qrs/app/{app_id}/reload?xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+
+        response = requests.post(url, headers=headers, verify=False)
+
+        if response.status_code not in [200, 201, 202]:
+            raise Exception(f"Failed to reload app: {response.status_code} {response.text}")
+        
+        return {
+            "success": True,
+            "message": f"Reload started for app {app_id}",
+            "app_id": app_id
+        }
+
+    def get_app_connections(self, app_id: str) -> list:
+        """Retrieve data connections from a specific app."""
+        xrfkey = "0123456789abcdef"
+        url = f"{self.server}/qrs/dataconnection/full?filter=app.id eq '{app_id}'&xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+
+        response = requests.get(url, headers=headers, verify=False)
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch app connections: {response.status_code} {response.text}")
+        
+        connections = response.json()
+        return [
+            {
+                "id": conn["id"],
+                "name": conn.get("name", ""),
+                "connectionstring": conn.get("connectionstring", ""),
+                "type": conn.get("type", ""),
+                "username": conn.get("username", "")
+            }
+            for conn in connections
+        ]
+
+    def export_app(self, app_id: str) -> dict:
+        """Export an app as QVF file."""
+        xrfkey = "0123456789abcdef"
+        url = f"{self.server}/qrs/app/{app_id}/export?xrfkey={xrfkey}"
+
+        headers = self._get_headers(xrfkey)
+
+        response = requests.post(url, headers=headers, verify=False)
+
+        if response.status_code not in [200, 201, 202]:
+            raise Exception(f"Failed to export app: {response.status_code} {response.text}")
+        
+        return {
+            "success": True,
+            "message": f"Export started for app {app_id}",
+            "app_id": app_id,
+            "download_url": f"{self.server}/qrs/download/app/{app_id}?xrfkey={xrfkey}"
+        }
 
     def _connect(self):
         return websocket.create_connection(
