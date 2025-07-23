@@ -1,42 +1,93 @@
-from playwright.sync_api import sync_playwright
+"""
+QlikSense Apps Ophalen met Browser-based Client
+
+Dit script demonstreert het gebruik van de nieuwe BrowserQlikClient
+voor het ophalen van QlikSense apps via een persistent browser context.
+"""
+
 import os
 from dotenv import load_dotenv
-from app import list_apps_with_session  # Zorg dat deze functie ook sync is of pas aan
+from browser_qlik_client import BrowserQlikClient, QlikAuthenticationError, QlikConnectionError
 
 def main():
+    """
+    Hoofdfunctie voor het ophalen van QlikSense apps via browser context
+    """
     load_dotenv()
+    
+    # Valideer environment variabelen
     qlik_server = os.getenv("QLIK_SERVER")
+    qlik_username = os.getenv("QLIK_USERNAME")
+    qlik_password = os.getenv("QLIK_PASSWORD")
+    
     if not qlik_server:
         print("QLIK_SERVER environment variable not set.")
         return
+    
+    if not qlik_username:
+        print("QLIK_USERNAME environment variable not set.")
+        return
+        
+    if not qlik_password:
+        print("QLIK_PASSWORD environment variable not set.")
+        return
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        context = browser.new_context(http_credentials={"username": os.getenv("QLIK_USERNAME"), "password": os.getenv("QLIK_PASSWORD")},
-                                      ignore_https_errors=True)
-        page = context.new_page()
-
-        page.goto(qlik_server + "/hub", wait_until='domcontentloaded')
-        print("Please log in to Qlik Sense in the browser window.")
-
-        cookies = context.cookies()
-        session_cookie = next((c for c in cookies if c['name'] == 'X-Qlik-Session'), None)
-
-        if session_cookie:
-            session_id = session_cookie['value']
-            print(f"Found session ID: {session_id}")
-
-            try:
-                apps = list_apps_with_session(session_id)  # Moet dan ook sync zijn
-                print("Successfully retrieved apps:")
-                for app in apps:
-                    print(f"- {app['name']} (ID: {app['id']})")
-            except Exception as e:
-                print(f"Error retrieving apps: {e}")
-        else:
-            print("Could not find session cookie. Make sure you are logged in.")
-
-        browser.close()
+    print(f"Verbinden met QlikSense server: {qlik_server}")
+    print(f"Gebruiker: {qlik_username}")
+    
+    # Maak browser client en haal apps op
+    try:
+        with BrowserQlikClient() as client:
+            print("\\nAuthenticatie wordt uitgevoerd...")
+            
+            if client.authenticate():
+                print("Authenticatie succesvol!")
+                
+                print("\\nOphalen van beschikbare apps...")
+                apps = client.get_apps()
+                
+                if apps:
+                    print(f"\\nSuccesvol {len(apps)} apps opgehaald:")
+                    print("-" * 80)
+                    
+                    for app in apps:
+                        print(f"Naam: {app['name']}")
+                        print(f"ID: {app['id']}")
+                        print(f"Eigenaar: {app['owner']}")
+                        print(f"Beschrijving: {app['description'][:100]}..." if len(app['description']) > 100 else f"Beschrijving: {app['description']}")
+                        print(f"Laatst gewijzigd: {app['modified']}")
+                        print(f"Gepubliceerd: {'Ja' if app['published'] else 'Nee'}")
+                        if app['stream']:
+                            print(f"Stream: {app['stream']}")
+                        if app['tags']:
+                            print(f"Tags: {', '.join(app['tags'])}")
+                        print("-" * 80)
+                else:
+                    print("Geen apps gevonden.")
+                
+                # Test ook taken ophalen
+                print("\\nOphalen van beschikbare taken...")
+                try:
+                    tasks = client.get_tasks()
+                    print(f"Succesvol {len(tasks)} taken opgehaald:")
+                    
+                    for task in tasks[:5]:  # Toon eerste 5 taken
+                        print(f"- {task['name']} (ID: {task['id']}, Type: {task['type']}, Status: {task['status']})")
+                        if task['app']:
+                            print(f"  App: {task['app']['name']}")
+                        
+                except Exception as e:
+                    print(f"Fout bij ophalen taken: {e}")
+                
+            else:
+                print("Authenticatie mislukt!")
+                
+    except QlikAuthenticationError as e:
+        print(f"Authenticatie fout: {e}")
+    except QlikConnectionError as e:
+        print(f"Verbinding fout: {e}")
+    except Exception as e:
+        print(f"Onverwachte fout: {e}")
 
 if __name__ == "__main__":
     main()
