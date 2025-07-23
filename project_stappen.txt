@@ -8,22 +8,29 @@ Voltooide stappen:
 - browser_manager.py: Eenvoudige browser management met sync_playwright
 - Verwijderd: browser_qlik_client.py (te complex)
 
+✅ Uitbreiding MCP tools voor app script en metadata management (Issue #25)
+- app.py: Uitgebreid met 7 nieuwe tools (get_app_script, get_app_metadata, update_app_script, get_app_variables, reload_app, get_app_connections, export_app)
+- qlik_client.py: Uitgebreid met alle nieuwe methodes en _get_headers() helper functie
+- Alle must-have functionaliteit geïmplementeerd: script ophalen, metadata ophalen, script updaten
+- Alle nice-to-have functionaliteit geïmplementeerd: variabelen, reload, connecties, export
+
 
 Resterende stappen:
 
 1. README.md updaten (nice-to-have)
-Doel: Documentatie bijwerken voor de vereenvoudigde implementatie
-Nut: Gebruikers kunnen de nieuwe simpele structuur begrijpen en gebruiken
+Doel: Documentatie bijwerken voor de uitgebreide implementatie
+Nut: Gebruikers kunnen alle nieuwe tools begrijpen en gebruiken
 Acties: 
-- Update installatie instructies
-- Update gebruiksvoorbeelden
-- Beschrijf nieuwe simpele architectuur
+- Update tool lijst met alle 10 beschikbare tools
+- Update gebruiksvoorbeelden met nieuwe functionaliteit
+- Beschrijf app script en metadata management mogelijkheden
 Bestanden: README.md
 
 2. Demo script aanpassen (nice-to-have)
-Doel: Voorbeeld script dat de nieuwe simpele structuur demonstreert
-Nut: Ontwikkelaars kunnen snel zien hoe de vereenvoudigde code werkt
+Doel: Voorbeeld script dat de nieuwe uitgebreide functionaliteit demonstreert
+Nut: Ontwikkelaars kunnen snel zien hoe alle tools werken
 Acties:
-- Maak simpel demo script
-- Toon gebruik van browser_manager en qlik_client
+- Maak uitgebreid demo script
+- Toon gebruik van alle nieuwe app management tools
+- Voorbeelden van script management en metadata ophalen
 Bestanden: demo.py (nieuw)
