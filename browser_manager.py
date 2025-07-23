@@ -20,7 +20,7 @@ class BrowserManager:
     def get_session_id(self):
         """Start browser, authenticeer en haal session_id op"""
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(headless=False)
             
             # Context met http_credentials
             context = browser.new_context(
@@ -34,7 +34,7 @@ class BrowserManager:
             page = context.new_page()
             
             # Ga naar QlikSense
-            page.goto(f"https://{self.server}/hub")
+            page.goto(f"{self.server}/hub", wait_until='domcontentloaded')
             
             # Wacht tot pagina geladen is
             page.wait_for_load_state("networkidle")

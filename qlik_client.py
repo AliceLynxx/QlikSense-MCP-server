@@ -26,7 +26,7 @@ class QlikClient:
     def list_apps(self) -> list:
         """Retrieve a list of available apps (IDs and names) from Qlik Sense."""
         xrfkey = "0123456789abcdef"  # Must be 16 characters
-        url = f"https://{self.server}/qrs/app/full?xrfkey={xrfkey}"
+        url = f"{self.server}/qrs/app/full?xrfkey={xrfkey}"
 
         headers = {
             "X-Qlik-User": self.user,
@@ -47,7 +47,7 @@ class QlikClient:
         personal_apps = [
             {"id": app["id"], "name": app["name"]}
             for app in apps
-            if app.get("published") is False and app.get("owner", {}).get("userId", "")==self.user_ID
+            if app.get("published") is False and app.get("owner", {}).get("userId", "")==self.user_ID.lower()
         ]
         
         return personal_apps
@@ -55,7 +55,7 @@ class QlikClient:
     def list_tasks(self) -> list:
         """Retrieve a list of available tasks from Qlik Sense."""
         xrfkey = "0123456789abcdef"
-        url = f"https://{self.server}/qrs/task/full?xrfkey={xrfkey}"
+        url = f"{self.server}/qrs/task/full?xrfkey={xrfkey}"
 
         headers = {
             "X-Qlik-User": self.user,
@@ -83,7 +83,7 @@ class QlikClient:
     def get_task_logs(self, task_id: str) -> list:
         """Retrieve logs for a specific task."""
         xrfkey = "0123456789abcdef"
-        url = f"https://{self.server}/qrs/executionresult/full?filter=executionId eq '{task_id}'&xrfkey={xrfkey}"
+        url = f"{self.server}/qrs/executionresult/full?filter=executionId eq '{task_id}'&xrfkey={xrfkey}"
 
         headers = {
             "X-Qlik-User": self.user,
