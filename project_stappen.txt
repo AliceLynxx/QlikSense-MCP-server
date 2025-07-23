@@ -7,20 +7,40 @@ VOLTOOIDE STAPPEN:
 ✅ Stap 4: Apps lijst tool implementatie - Entry point gecorrigeerd naar mcp.run(), list_apps tool geregistreerd met @app.tool() decorator, QlikClient.get_apps() methode volledig geïmplementeerd met QRS API call, retry mechanisme, error handling en data formatting
 ✅ Stap 5: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call naar /qrs/task/full endpoint, uitgebreide data formatting voor taak metadata (type, status, app, triggers, laatste uitvoering), consistent error handling
 ✅ Stap 6: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie, retry mechanisme en consistent error handling
+✅ Stap 7: Session-based app listing - list_apps_with_session tool toegevoegd voor gebruik met bestaande sessie ID's
+✅ Stap 8: Browser-based refactoring - BrowserQlikClient geïmplementeerd met sync_playwright voor persistent browser context, automatische en handmatige authenticatie via browser, alle API calls via browser's fetch API, retry mechanisme en error handling, vervangt requests-based authenticatie probleem
+✅ Stap 9: Browser lifecycle management - BrowserManager klasse geïmplementeerd voor browser health checks, error recovery, resource cleanup en context management
+✅ Stap 10: MCP server browser integratie - app.py geupdate om BrowserQlikClient te gebruiken, persistent browser context hergebruik via global client instance, graceful shutdown handling, backward compatibility voor list_apps_with_session
+✅ Stap 11: Demo script browser update - get_apps_with_playwright.py geupdate om nieuwe BrowserQlikClient te gebruiken, demonstreert authenticatie en apps/tasks ophalen
 
 NICE-TO-HAVE STAPPEN:
 
-7. Error handling en logging (nice-to-have)
-   Doel: Robuuste error handling en logging toevoegen
-   Bestanden: app.py, qlik_client.py
-   Acties: Try-catch blokken, logging configuratie, error responses
+12. README.md update voor browser-based implementatie (nice-to-have)
+    Doel: Documentatie updaten voor nieuwe browser-based architectuur
+    Bestanden: README.md
+    Acties: Installatie instructies voor playwright, configuratie voor QLIK_USERNAME/QLIK_PASSWORD, gebruik voorbeelden met browser authenticatie
 
-8. Configuratie validatie (nice-to-have)
-   Doel: Validatie van configuratie parameters
-   Bestanden: app.py
-   Acties: Environment variabelen valideren, duidelijke error messages
+13. Requirements.txt update (nice-to-have)
+    Doel: Playwright dependencies toevoegen
+    Bestanden: requirements.txt
+    Acties: playwright package toevoegen, eventueel andere browser dependencies
 
-9. Uitgebreide documentatie (nice-to-have)
-   Doel: Volledige gebruikersdocumentatie
-   Bestanden: README.md, docs/
-   Acties: Installatie instructies, gebruik voorbeelden, API documentatie
+14. .env-example update (nice-to-have)
+    Doel: Nieuwe environment variabelen toevoegen
+    Bestanden: .env-example
+    Acties: QLIK_USERNAME en QLIK_PASSWORD variabelen toevoegen
+
+15. Error handling verbetering (nice-to-have)
+    Doel: Robuustere error handling voor browser crashes
+    Bestanden: browser_qlik_client.py, browser_manager.py
+    Acties: Betere browser crash detection, automatic recovery, timeout handling
+
+16. Configuratie validatie uitbreiding (nice-to-have)
+    Doel: Validatie van browser-specifieke configuratie
+    Bestanden: app.py, browser_qlik_client.py
+    Acties: Username/password validatie, browser executable checks
+
+17. Performance optimalisatie (nice-to-have)
+    Doel: Browser performance verbeteren
+    Bestanden: browser_qlik_client.py, browser_manager.py
+    Acties: Browser caching, connection pooling, resource optimization
