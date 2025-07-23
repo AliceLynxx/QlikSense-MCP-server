@@ -7,20 +7,21 @@ VOLTOOIDE STAPPEN:
 ✅ Stap 4: Apps lijst tool implementatie - Entry point gecorrigeerd naar mcp.run(), list_apps tool geregistreerd met @app.tool() decorator, QlikClient.get_apps() methode volledig geïmplementeerd met QRS API call, retry mechanisme, error handling en data formatting
 ✅ Stap 5: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call naar /qrs/task/full endpoint, uitgebreide data formatting voor taak metadata (type, status, app, triggers, laatste uitvoering), consistent error handling
 ✅ Stap 6: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie, retry mechanisme en consistent error handling
+✅ Stap 7: Playwright-only authenticatie refactor - Volledige refactor naar Playwright-based authenticatie: QlikClient aangepast naar session-only (geen username/password meer), alle MCP tools vervangen door session-based versies (list_apps_with_session, list_tasks_with_session, get_task_logs_with_session), get_apps_with_playwright.py uitgebreid tot volledige demonstratie script, oude authenticatie code verwijderd, browser sessie management geïmplementeerd
 
 NICE-TO-HAVE STAPPEN:
 
-7. Error handling en logging (nice-to-have)
+8. Error handling en logging (nice-to-have)
    Doel: Robuuste error handling en logging toevoegen
    Bestanden: app.py, qlik_client.py
    Acties: Try-catch blokken, logging configuratie, error responses
 
-8. Configuratie validatie (nice-to-have)
+9. Configuratie validatie (nice-to-have)
    Doel: Validatie van configuratie parameters
    Bestanden: app.py
    Acties: Environment variabelen valideren, duidelijke error messages
 
-9. Uitgebreide documentatie (nice-to-have)
-   Doel: Volledige gebruikersdocumentatie
-   Bestanden: README.md, docs/
-   Acties: Installatie instructies, gebruik voorbeelden, API documentatie
+10. Uitgebreide documentatie (nice-to-have)
+    Doel: Volledige gebruikersdocumentatie
+    Bestanden: README.md, docs/
+    Acties: Installatie instructies, gebruik voorbeelden, API documentatie

@@ -1,27 +1,29 @@
 QlikSense MCP Server - Project Informatie
 
 Projectomschrijving:
-Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools.
+Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools met Playwright-based authenticatie.
 
 Project doel, nut en functie:
-- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt
+- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt via Playwright authenticatie
 - Doelgroep: Ontwikkelaars die QlikSense willen integreren met MCP-compatibele tools en data analisten die QlikSense functionaliteit willen automatiseren
-- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten
-- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol
+- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten met betrouwbare browser-based authenticatie
+- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met session-based authenticatie
 
 Architectuur/modulestructuur:
-1. app.py - Minimale FastMCP server met directe tool registratie
-2. qlik_client.py - QlikSense client voor API communicatie
-3. .env-example - Configuratie template
-4. requirements.txt - Python dependencies
-5. README.md - Uitgebreide documentatie
+1. app.py - FastMCP server met session-based tools
+2. qlik_client.py - QlikSense client voor session-only API communicatie
+3. get_apps_with_playwright.py - Playwright authenticatie demonstratie
+4. .env-example - Configuratie template
+5. requirements.txt - Python dependencies
+6. README.md - Uitgebreide documentatie
 
 Per module status:
-1. app.py - Status: ✅ Voltooid (Uitgebreid), Pad: /app.py, Functionaliteit: Minimale FastMCP server implementatie met directe @mcp.tool() decorators, get_qlik_client() helper functie, eenvoudige error handling, list_apps tool, list_tasks tool, get_task_logs tool, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
-2. qlik_client.py - Status: ✅ Voltooid (Uitgebreid), Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, volledige get_apps() implementatie met QRS API call, volledige get_tasks() implementatie met /qrs/task/full endpoint en uitgebreide data formatting, volledige get_logs() implementatie met /qrs/executionresult endpoint, retry mechanisme, data formatting, environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
-3. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
-4. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, logging, etc., Afhankelijkheden: geen
-5. README.md - Status: ✅ Voltooid, Pad: /README.md, Functionaliteit: Uitgebreide documentatie met installatie instructies, configuratie en gebruik, Afhankelijkheden: geen
+1. app.py - Status: ✅ Voltooid (Refactored), Pad: /app.py, Functionaliteit: FastMCP server met session-based tools: list_apps_with_session(), list_tasks_with_session(), get_task_logs_with_session(), alle tools vereisen session_id parameter, geen oude authenticatie meer, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
+2. qlik_client.py - Status: ✅ Voltooid (Refactored), Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-only authenticatie, geen username/password authenticatie meer, alleen session_id cookie authenticatie, volledige API implementatie (get_apps, get_tasks, get_logs), retry mechanisme, data formatting, Afhankelijkheden: requests, python-dotenv
+3. get_apps_with_playwright.py - Status: ✅ Voltooid (Nieuw), Pad: /get_apps_with_playwright.py, Functionaliteit: Playwright authenticatie manager, volledige demonstratie van alle functionaliteit, browser sessie beheer, session_id verkrijging, MCP tool simulatie, Afhankelijkheden: playwright, qlik_client.py
+4. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
+5. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, playwright, logging, etc., Afhankelijkheden: geen
+6. README.md - Status: ✅ Voltooid, Pad: /README.md, Functionaliteit: Uitgebreide documentatie met installatie instructies, configuratie en gebruik, Afhankelijkheden: geen
 
 Voltooide stappen:
 - Stap 1: Basis project setup - Alle configuratie bestanden en documentatie zijn geïmplementeerd
@@ -31,3 +33,11 @@ Voltooide stappen:
 - Stap 5: App.py vereenvoudiging - Complexe QlikMCPServer klasse vervangen door minimale implementatie zoals Github-MCP-server
 - Stap 6: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call en uitgebreide data formatting
 - Stap 7: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie en consistent error handling
+- Stap 8: Playwright-only authenticatie refactor - Volledige refactor naar session-only authenticatie: QlikClient werkt alleen met session_id, alle MCP tools vereisen session_id parameter, Playwright demonstratie script, geen oude authenticatie code meer aanwezig
+
+Authenticatie architectuur:
+- Playwright browser verkrijgt session_id via X-Qlik-User header authenticatie
+- Session_id wordt doorgegeven aan alle MCP tools als parameter
+- QlikClient gebruikt alleen session cookie voor API calls
+- Browser sessie kan open blijven voor hergebruik van session_id
+- Geen username/password opslag meer nodig in QlikClient
