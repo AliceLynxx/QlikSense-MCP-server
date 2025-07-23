@@ -22,9 +22,9 @@ Architectuur/modulestructuur:
 Per module status:
 1. app.py - Status: ✅ Voltooid (Browser-based), Pad: /app.py, Functionaliteit: FastMCP server met BrowserQlikClient integratie, persistent browser context hergebruik, graceful shutdown handling, list_apps tool, list_apps_with_session tool (backward compatibility), list_tasks tool, get_task_logs tool, Afhankelijkheden: browser_qlik_client.py, mcp.server.fastmcp
 
-2. browser_qlik_client.py - Status: ✅ Voltooid (Nieuw), Pad: /browser_qlik_client.py, Functionaliteit: BrowserQlikClient klasse met sync_playwright, persistent browser context, automatische en handmatige authenticatie, browser-based API calls via fetch, retry mechanisme, error handling, get_apps(), get_tasks(), get_logs() methoden, Afhankelijkheden: playwright, python-dotenv
+2. browser_qlik_client.py - Status: ✅ Voltooid (Hersteld), Pad: /browser_qlik_client.py, Functionaliteit: BrowserQlikClient klasse met sync_playwright, persistent browser context, automatische en handmatige authenticatie, browser-based API calls via fetch, retry mechanisme, error handling, get_apps(), get_tasks(), get_logs() methoden, custom exceptions (QlikAuthenticationError, QlikConnectionError), context manager support, Afhankelijkheden: playwright, python-dotenv
 
-3. browser_manager.py - Status: ✅ Voltooid (Nieuw), Pad: /browser_manager.py, Functionaliteit: BrowserManager klasse voor browser lifecycle management, health checks, error recovery, retry mechanisme, resource cleanup, context manager support, Afhankelijkheden: playwright
+3. browser_manager.py - Status: ✅ Voltooid (Hersteld), Pad: /browser_manager.py, Functionaliteit: BrowserManager klasse voor browser lifecycle management, health checks, error recovery, retry mechanisme, resource cleanup, context manager support, auto recovery functionaliteit, browser status monitoring, singleton pattern, Afhankelijkheden: browser_qlik_client.py, threading
 
 4. qlik_client.py - Status: ✅ Voltooid (Legacy), Pad: /qlik_client.py, Functionaliteit: Legacy QlikClient klasse met requests-based authenticatie (behouden voor referentie), session-based authenticatie, QRS API calls, retry mechanisme, data formatting, Afhankelijkheden: requests, python-dotenv
 
@@ -42,3 +42,4 @@ Voltooide stappen:
 - Stap 9: Browser lifecycle management - BrowserManager geïmplementeerd voor browser health checks, error recovery en resource cleanup
 - Stap 10: MCP server integratie - app.py geupdate om BrowserQlikClient te gebruiken met persistent browser context hergebruik en graceful shutdown
 - Stap 11: Demo script update - get_apps_with_playwright.py geupdate om nieuwe BrowserQlikClient te gebruiken
+- Stap 12: Bug fix - Lege browser_qlik_client.py en browser_manager.py bestanden hersteld met volledige implementatie
