@@ -11,17 +11,17 @@ Project doel, nut en functie:
 - Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met session-based authenticatie
 
 Architectuur/modulestructuur:
-1. app.py - Simpele FastMCP server met tool definities
-2. qlik_client.py - Eenvoudige QlikSense client met basis functionaliteit
+1. app.py - FastMCP server met uitgebreide tool definities
+2. qlik_client.py - QlikSense client met app script en metadata management
 3. browser_manager.py - Browser lifecycle management met sync_playwright
 4. .env-example - Configuratie template
 5. requirements.txt - Python dependencies
 6. README.md - Documentatie
 
 Per module status:
-1. app.py - Status: ✅ Vereenvoudigd, Pad: /app.py, Functionaliteit: Simpele FastMCP server met list_apps, list_tasks, get_task_logs tools. Elke tool start browser, haalt data op via QlikClient, Afhankelijkheden: browser_manager.py, qlik_client.py, mcp.server.fastmcp
+1. app.py - Status: ✅ Uitgebreid, Pad: /app.py, Functionaliteit: FastMCP server met 10 tools: list_apps, list_tasks, get_task_logs, get_app_script, get_app_metadata, update_app_script, get_app_variables, reload_app, get_app_connections, export_app. Elke tool gebruikt _get_qlik_client() helper functie, Afhankelijkheden: browser_manager.py, qlik_client.py, mcp.server.fastmcp
 
-2. qlik_client.py - Status: ✅ Vereenvoudigd, Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met server, username, session_id parameters. Simpele methodes: list_apps(), list_tasks(), get_task_logs(). Directe requests calls zonder complexe error handling, Afhankelijkheden: requests, urllib3, websocket
+2. qlik_client.py - Status: ✅ Uitgebreid, Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met uitgebreide functionaliteit. Must-have methodes: get_app_script(), get_app_metadata(), update_app_script(). Nice-to-have methodes: get_app_variables(), reload_app(), get_app_connections(), export_app(). Bevat _get_headers() helper methode voor consistente API calls, Afhankelijkheden: requests, urllib3, websocket, json
 
 3. browser_manager.py - Status: ✅ Vereenvoudigd, Pad: /browser_manager.py, Functionaliteit: BrowserManager klasse met get_session_id() methode. Gebruikt sync_playwright met http_credentials context. Start browser, authenticeer, haal session_id op, sluit browser, Afhankelijkheden: playwright, python-dotenv
 
@@ -29,6 +29,5 @@ Per module status:
 
 5. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies, Afhankelijkheden: geen
 
-6. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie voor vereenvoudigde implementatie, Afhankelijkheden: geen
-
+6. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie voor uitgebreide implementatie met nieuwe tools, Afhankelijkheden: geen
 
