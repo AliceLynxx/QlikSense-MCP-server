@@ -1,14 +1,14 @@
 """
-Simpele browser manager voor QlikSense authenticatie
+Async browser manager voor QlikSense authenticatie
 """
 
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-class BrowserManager:
+class AsyncBrowserManager:
     def __init__(self):
         self.server = os.getenv("QLIK_SERVER")
         self.username = os.getenv("QLIK_USERNAME") 
@@ -17,13 +17,13 @@ class BrowserManager:
         if not all([self.server, self.username, self.password]):
             raise ValueError("QLIK_SERVER, QLIK_USERNAME en QLIK_PASSWORD environment variabelen zijn vereist")
     
-    def get_session_id(self):
-        """Start browser, authenticeer en haal session_id op"""
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+    async def get_session_id(self):
+        """Start browser, authenticeer en haal session_id op (async)"""
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=False)
             
             # Context met http_credentials
-            context = browser.new_context(
+            context = await browser.new_context(
                 http_credentials={
                     "username": self.username,
                     "password": self.password
@@ -31,16 +31,16 @@ class BrowserManager:
                 ignore_https_errors=True
             )
             
-            page = context.new_page()
+            page = await context.new_page()
             
             # Ga naar QlikSense
-            page.goto(f"{self.server}/hub", wait_until='domcontentloaded')
+            await page.goto(f"{self.server}/hub", wait_until='domcontentloaded')
             
             # Wacht tot pagina geladen is
-            page.wait_for_load_state("networkidle")
+            await page.wait_for_load_state("networkidle")
             
             # Haal session_id uit cookies
-            cookies = context.cookies()
+            cookies = await context.cookies()
             session_id = None
             
             for cookie in cookies:
@@ -48,7 +48,7 @@ class BrowserManager:
                     session_id = cookie["value"]
                     break
             
-            browser.close()
+            await browser.close()
             
             if not session_id:
                 raise Exception("Kon geen session_id verkrijgen")
