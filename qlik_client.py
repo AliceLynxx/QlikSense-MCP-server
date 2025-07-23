@@ -2,8 +2,8 @@
 QlikSense Client Module
 
 Dit module bevat de QlikClient klasse voor communicatie met QlikSense server
-via session-based authenticatie. De client biedt een betrouwbare interface
-voor het uitvoeren van QlikSense API operaties.
+via session-based authenticatie met Playwright-verkregen session_id.
+De client biedt een betrouwbare interface voor het uitvoeren van QlikSense API operaties.
 
 Author: QlikSense MCP Server Project
 """
@@ -28,35 +28,31 @@ class QlikConnectionError(Exception):
 
 class QlikClient:
     """
-    QlikSense API Client met session-based authenticatie
+    QlikSense API Client met session-based authenticatie via Playwright
     
     Deze klasse biedt een interface voor communicatie met QlikSense server
-    via session-based authenticatie. De client beheert automatisch sessies
-    en biedt methoden voor het ophalen van apps, taken en logs.
+    via session-based authenticatie met een door Playwright verkregen session_id.
+    De client beheert API calls met de sessie cookie en biedt methoden voor 
+    het ophalen van apps, taken en logs.
     
     Attributes:
         server_url (str): QlikSense server URL
-        username (str): Gebruikersnaam voor authenticatie
-        app_id (Optional[str]): Standaard app ID
+        session_id (str): Actieve sessie ID verkregen via Playwright
         session (requests.Session): HTTP sessie object
-        session_id (Optional[str]): Actieve sessie ID
         timeout (int): Request timeout in seconden
         max_retries (int): Maximum aantal herhalingen bij fouten
     """
     
-    def __init__(self, server_url: Optional[str] = None, username: Optional[str] = None,
-                 app_id: Optional[str] = None, timeout: int = 30, max_retries: int = 3,
-                 session_id: Optional[str] = None):
+    def __init__(self, server_url: Optional[str] = None, session_id: str = None, 
+                 timeout: int = 30, max_retries: int = 3):
         """
-        Initialiseer QlikClient
+        Initialiseer QlikClient met session_id
         
         Args:
             server_url: QlikSense server URL (optioneel, gebruikt QLIK_SERVER env var)
-            username: Gebruikersnaam (optioneel, gebruikt QLIK_USER env var)
-            app_id: Standaard app ID (optioneel, gebruikt APP_ID env var)
+            session_id: Sessie ID verkregen via Playwright authenticatie (vereist)
             timeout: Request timeout in seconden
             max_retries: Maximum aantal herhalingen bij fouten
-            session_id: Bestaande QlikSense sessie ID (optioneel)
             
         Raises:
             QlikConnectionError: Als vereiste configuratie ontbreekt
@@ -66,21 +62,24 @@ class QlikClient:
         
         # Configuratie laden
         self.server_url = server_url or os.getenv('QLIK_SERVER')
-        self.username = username or os.getenv('QLIK_USER')
-        self.app_id = app_id or os.getenv('APP_ID')
+        self.session_id = session_id
         self.timeout = timeout
         self.max_retries = max_retries
         
         # Valideer vereiste configuratie
         if not self.server_url:
             raise QlikConnectionError("Server URL is vereist (QLIK_SERVER environment variabele)")
-
+        if not self.session_id:
+            raise QlikConnectionError("Session ID is vereist (verkregen via Playwright authenticatie)")
+            
         # Normaliseer server URL
         self.server_url = self.server_url.rstrip('/')
         
         # Initialiseer sessie
         self.session = requests.Session()
-        self.session_id: Optional[str] = session_id
+        
+        # Stel session cookie in
+        self.session.cookies.set('X-Qlik-Session', self.session_id)
         
         # SSL verificatie configuratie
         ssl_verify = os.getenv('SSL_VERIFY', 'true').lower() == 'true'
@@ -89,86 +88,7 @@ class QlikClient:
         # Logging setup
         self.logger = logging.getLogger(__name__)
         
-        self.logger.info(f"QlikClient geïnitialiseerd voor server: {self.server_url}")
-
-        if self.session_id:
-            self._set_session_cookie()
-
-    def _set_session_cookie(self):
-        """Stel de sessiecookie in voor de requests sessie."""
-        if self.session_id:
-            self.session.cookies.set('X-Qlik-Session', self.session_id)
-            self.logger.info("Sessiecookie ingesteld voor QlikClient")
-
-    def authenticate(self) -> bool:
-        """
-        Voer session-based authenticatie uit
-        
-        Maakt verbinding met QlikSense server via X-Qlik-User header
-        en slaat de sessie cookie op voor hergebruik.
-        
-        Returns:
-            bool: True als authenticatie succesvol, False anders
-            
-        Raises:
-            QlikAuthenticationError: Als authenticatie mislukt
-            QlikConnectionError: Als verbinding mislukt
-        """
-        if self.session_id:
-            self.logger.info("Authenticatie overgeslagen, bestaande sessie ID wordt gebruikt")
-            return True
-
-        if not self.username:
-            raise QlikAuthenticationError("Gebruikersnaam is vereist voor authenticatie")
-
-        try:
-            # Stel authenticatie headers in
-            headers = {
-                'X-Qlik-User': self.username,
-                'Content-Type': 'application/json'
-            }
-            
-            # Maak verbinding met /hub endpoint
-            hub_url = f"{self.server_url}/hub"
-            
-            self.logger.info(f"Authenticatie poging voor gebruiker: {self.username}")
-            
-            response = self.session.get(
-                hub_url,
-                headers=headers,
-                timeout=self.timeout
-            )
-            
-            # Controleer response status
-            if response.status_code == 200:
-                # Zoek naar sessie cookie
-                session_cookie = None
-                for cookie in self.session.cookies:
-                    if cookie.name == 'X-Qlik-Session':
-                        session_cookie = cookie.value
-                        break
-                
-                if session_cookie:
-                    self.session_id = session_cookie
-                    self.logger.info("Authenticatie succesvol, sessie opgeslagen")
-                    return True
-                else:
-                    self.logger.warning("Geen sessie cookie ontvangen")
-                    return False
-                    
-            elif response.status_code == 401:
-                raise QlikAuthenticationError(f"Authenticatie mislukt voor gebruiker: {self.username}")
-            elif response.status_code == 403:
-                raise QlikAuthenticationError(f"Toegang geweigerd voor gebruiker: {self.username}")
-            else:
-                raise QlikConnectionError(f"Onverwachte response status: {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            raise QlikConnectionError(f"Timeout bij verbinding met server: {self.server_url}")
-        except requests.exceptions.ConnectionError:
-            raise QlikConnectionError(f"Kan geen verbinding maken met server: {self.server_url}")
-        except requests.exceptions.RequestException as e:
-            raise QlikConnectionError(f"Request fout: {str(e)}")
+        self.logger.info(f"QlikClient geïnitialiseerd voor server: {self.server_url} met session_id")
     
     def _make_authenticated_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """
@@ -183,18 +103,14 @@ class QlikClient:
             requests.Response: Response object
             
         Raises:
-            QlikAuthenticationError: Als authenticatie vereist is
+            QlikAuthenticationError: Als authenticatie mislukt
             QlikConnectionError: Als request mislukt
         """
-        if not self.session_id:
-            raise QlikAuthenticationError("Geen actieve sessie, authenticatie vereist")
-        
         url = f"{self.server_url}{endpoint}"
         
-        # Standaard headers
+        # Standaard headers (geen X-Qlik-User meer nodig)
         headers = kwargs.get('headers', {})
         headers.update({
-            'X-Qlik-User': self.username,
             'Content-Type': 'application/json'
         })
         kwargs['headers'] = headers
@@ -206,6 +122,13 @@ class QlikClient:
             try:
                 self.logger.debug(f"Request poging {attempt + 1}/{self.max_retries} voor {endpoint}")
                 response = self.session.request(method, url, **kwargs)
+                
+                # Check voor authenticatie fouten
+                if response.status_code == 401:
+                    raise QlikAuthenticationError("Session verlopen of ongeldig")
+                elif response.status_code == 403:
+                    raise QlikAuthenticationError("Onvoldoende rechten voor dit endpoint")
+                
                 response.raise_for_status()
                 return response
             except requests.exceptions.RequestException as e:
@@ -227,7 +150,7 @@ class QlikClient:
             List[Dict[str, Any]]: Lijst van app informatie met relevante metadata
             
         Raises:
-            QlikAuthenticationError: Als authenticatie vereist is
+            QlikAuthenticationError: Als authenticatie mislukt
             QlikConnectionError: Als request mislukt
         """
         self.logger.info("Ophalen van beschikbare apps")
@@ -269,7 +192,7 @@ class QlikClient:
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+                raise QlikAuthenticationError("Session verlopen, hernieuw sessie")
             elif e.response.status_code == 403:
                 raise QlikAuthenticationError("Onvoldoende rechten voor apps endpoint")
             else:
@@ -286,7 +209,7 @@ class QlikClient:
             List[Dict[str, Any]]: Lijst van taak informatie met relevante metadata
             
         Raises:
-            QlikAuthenticationError: Als authenticatie vereist is
+            QlikAuthenticationError: Als authenticatie mislukt
             QlikConnectionError: Als request mislukt
         """
         self.logger.info("Ophalen van beschikbare taken")
@@ -377,7 +300,7 @@ class QlikClient:
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+                raise QlikAuthenticationError("Session verlopen, hernieuw sessie")
             elif e.response.status_code == 403:
                 raise QlikAuthenticationError("Onvoldoende rechten voor tasks endpoint")
             else:
@@ -414,7 +337,7 @@ class QlikClient:
                 
         Raises:
             ValueError: Als task_id leeg of None is
-            QlikAuthenticationError: Als authenticatie vereist is
+            QlikAuthenticationError: Als authenticatie mislukt
             QlikConnectionError: Als request mislukt
         """
         self.logger.info(f"Ophalen van logs voor taak: {task_id}")
@@ -534,7 +457,7 @@ class QlikClient:
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                raise QlikAuthenticationError("Authenticatie verlopen, hernieuw sessie")
+                raise QlikAuthenticationError("Session verlopen, hernieuw sessie")
             elif e.response.status_code == 403:
                 raise QlikAuthenticationError("Onvoldoende rechten voor execution results endpoint")
             elif e.response.status_code == 404:
@@ -576,21 +499,19 @@ class QlikClient:
         self.close()
 
 
-# Convenience functie voor eenvoudige client initialisatie
-def create_qlik_client(**kwargs) -> QlikClient:
+# Convenience functie voor eenvoudige client initialisatie met session_id
+def create_qlik_client_with_session(session_id: str, **kwargs) -> QlikClient:
     """
-    Maak en authenticeer QlikClient
+    Maak QlikClient met session_id
     
     Args:
+        session_id: Sessie ID verkregen via Playwright authenticatie
         **kwargs: Argumenten voor QlikClient constructor
         
     Returns:
-        QlikClient: Geauthenticeerde client instance
+        QlikClient: Client instance met session_id
         
     Raises:
-        QlikAuthenticationError: Als authenticatie mislukt
-        QlikConnectionError: Als verbinding mislukt
+        QlikConnectionError: Als configuratie ontbreekt
     """
-    client = QlikClient(**kwargs)
-    client.authenticate()
-    return client
+    return QlikClient(session_id=session_id, **kwargs)
