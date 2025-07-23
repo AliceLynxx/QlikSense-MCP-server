@@ -1,5 +1,9 @@
 """
 Simpele QlikSense MCP Server
+
+MCP server implementatie voor QlikSense functionaliteit met Playwright-based authenticatie.
+Alle tools vereisen een session_id parameter die verkregen moet worden via Playwright authenticatie.
+
 """
 
 from mcp.server.fastmcp import FastMCP

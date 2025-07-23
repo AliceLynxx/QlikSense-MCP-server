@@ -1,11 +1,13 @@
 QlikSense MCP Server - Project Stappen
 
+
 Voltooide stappen:
 ✅ Code vereenvoudigd naar gewenste simpele structuur
 - app.py: Simpele MCP server met tool definities
 - qlik_client.py: Basis QlikSense client zonder complexiteit  
 - browser_manager.py: Eenvoudige browser management met sync_playwright
 - Verwijderd: browser_qlik_client.py (te complex)
+
 
 Resterende stappen:
 

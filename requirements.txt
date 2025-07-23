@@ -8,6 +8,9 @@ playwright>=1.40.0
 # HTTP client for QlikSense API (legacy support)
 requests>=2.31.0
 
+# Browser automation for authentication
+playwright>=1.40.0
+
 # Environment variable management
 python-dotenv>=1.0.0
 

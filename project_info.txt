@@ -3,11 +3,12 @@ QlikSense MCP Server - Project Informatie
 Projectomschrijving:
 Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools met browser-based authenticatie.
 
+
 Project doel, nut en functie:
-- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt
+- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt via Playwright authenticatie
 - Doelgroep: Ontwikkelaars die QlikSense willen integreren met MCP-compatibele tools en data analisten die QlikSense functionaliteit willen automatiseren
-- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten
-- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol
+- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten met betrouwbare browser-based authenticatie
+- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met session-based authenticatie
 
 Architectuur/modulestructuur:
 1. app.py - Simpele FastMCP server met tool definities
@@ -30,9 +31,4 @@ Per module status:
 
 6. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie voor vereenvoudigde implementatie, Afhankelijkheden: geen
 
-Voltooide stappen:
-- Code vereenvoudigd naar simpele, compacte structuur
-- app.py bevat alleen MCP tool definities
-- qlik_client.py heeft basis functionaliteit zonder complexiteit
-- browser_manager.py gebruikt sync_playwright met http_credentials
-- Verwijderd: browser_qlik_client.py (te complex)
+

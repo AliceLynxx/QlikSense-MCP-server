@@ -1,5 +1,6 @@
 """
 Simpele QlikSense client
+
 """
 
 import requests
