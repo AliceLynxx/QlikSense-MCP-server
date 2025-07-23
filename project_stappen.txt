@@ -1,27 +1,29 @@
-QlikSense MCP Server - Ontwikkelstappen
+QlikSense MCP Server - Project Stappen
 
-VOLTOOIDE STAPPEN:
-✅ Stap 1: Basis project setup - Fundament gelegd met requirements.txt, .env-example en uitgebreide README.md documentatie
-✅ Stap 2: QlikSense client implementatie - QlikClient klasse geïmplementeerd met session-based authenticatie, error handling, basis API methoden (get_apps, get_tasks, get_logs), environment variabelen ondersteuning en uitgebreide documentatie
-✅ Stap 3: FastMCP server setup - FastMCP server geïmplementeerd in app.py met QlikMCPServer klasse, configuratie validatie, QlikClient integratie, async startup/shutdown handlers, logging configuratie en error handling
-✅ Stap 4: Apps lijst tool implementatie - Entry point gecorrigeerd naar mcp.run(), list_apps tool geregistreerd met @app.tool() decorator, QlikClient.get_apps() methode volledig geïmplementeerd met QRS API call, retry mechanisme, error handling en data formatting
-✅ Stap 5: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call naar /qrs/task/full endpoint, uitgebreide data formatting voor taak metadata (type, status, app, triggers, laatste uitvoering), consistent error handling
-✅ Stap 6: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie, retry mechanisme en consistent error handling
-✅ Stap 7: Playwright-only authenticatie refactor - Volledige refactor naar Playwright-based authenticatie: QlikClient aangepast naar session-only (geen username/password meer), alle MCP tools vervangen door session-based versies (list_apps_with_session, list_tasks_with_session, get_task_logs_with_session), get_apps_with_playwright.py uitgebreid tot volledige demonstratie script, oude authenticatie code verwijderd, browser sessie management geïmplementeerd
 
-NICE-TO-HAVE STAPPEN:
+Voltooide stappen:
+✅ Code vereenvoudigd naar gewenste simpele structuur
+- app.py: Simpele MCP server met tool definities
+- qlik_client.py: Basis QlikSense client zonder complexiteit  
+- browser_manager.py: Eenvoudige browser management met sync_playwright
+- Verwijderd: browser_qlik_client.py (te complex)
 
-8. Error handling en logging (nice-to-have)
-   Doel: Robuuste error handling en logging toevoegen
-   Bestanden: app.py, qlik_client.py
-   Acties: Try-catch blokken, logging configuratie, error responses
 
-9. Configuratie validatie (nice-to-have)
-   Doel: Validatie van configuratie parameters
-   Bestanden: app.py
-   Acties: Environment variabelen valideren, duidelijke error messages
+Resterende stappen:
 
-10. Uitgebreide documentatie (nice-to-have)
-    Doel: Volledige gebruikersdocumentatie
-    Bestanden: README.md, docs/
-    Acties: Installatie instructies, gebruik voorbeelden, API documentatie
+1. README.md updaten (nice-to-have)
+Doel: Documentatie bijwerken voor de vereenvoudigde implementatie
+Nut: Gebruikers kunnen de nieuwe simpele structuur begrijpen en gebruiken
+Acties: 
+- Update installatie instructies
+- Update gebruiksvoorbeelden
+- Beschrijf nieuwe simpele architectuur
+Bestanden: README.md
+
+2. Demo script aanpassen (nice-to-have)
+Doel: Voorbeeld script dat de nieuwe simpele structuur demonstreert
+Nut: Ontwikkelaars kunnen snel zien hoe de vereenvoudigde code werkt
+Acties:
+- Maak simpel demo script
+- Toon gebruik van browser_manager en qlik_client
+Bestanden: demo.py (nieuw)
