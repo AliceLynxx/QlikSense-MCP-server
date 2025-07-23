@@ -1,33 +1,44 @@
 QlikSense MCP Server - Project Informatie
 
 Projectomschrijving:
-Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools.
+Dit project ontwikkelt een Model Context Protocol (MCP) server voor QlikSense applicaties. De server biedt een gestandaardiseerde interface voor het communiceren met QlikSense via MCP-compatibele tools met browser-based authenticatie.
 
 Project doel, nut en functie:
-- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt
+- Doel: Een eenvoudige en betrouwbare MCP-server bouwen die QlikSense functionaliteit toegankelijk maakt via persistent browser context
 - Doelgroep: Ontwikkelaars die QlikSense willen integreren met MCP-compatibele tools en data analisten die QlikSense functionaliteit willen automatiseren
-- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten
-- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol
+- Nut: Vereenvoudigt de integratie van QlikSense in moderne development workflows en AI-assistenten met betrouwbare browser-based authenticatie
+- Functie: Biedt gestandaardiseerde tools voor het beheren van QlikSense apps, taken en logs via MCP protocol met persistent browser sessie
 
 Architectuur/modulestructuur:
-1. app.py - Minimale FastMCP server met directe tool registratie
-2. qlik_client.py - QlikSense client voor API communicatie
-3. .env-example - Configuratie template
-4. requirements.txt - Python dependencies
-5. README.md - Uitgebreide documentatie
+1. app.py - FastMCP server met browser-based QlikClient integratie
+2. browser_qlik_client.py - Browser-based QlikSense client met sync_playwright
+3. browser_manager.py - Browser lifecycle management en error recovery
+4. qlik_client.py - Legacy requests-based client (behouden voor referentie)
+5. get_apps_with_playwright.py - Demo script voor browser-based client
+6. .env-example - Configuratie template
+7. requirements.txt - Python dependencies
+8. README.md - Uitgebreide documentatie
 
 Per module status:
-1. app.py - Status: ✅ Voltooid (Uitgebreid), Pad: /app.py, Functionaliteit: Minimale FastMCP server implementatie met directe @mcp.tool() decorators, get_qlik_client() helper functie, eenvoudige error handling, list_apps tool, list_tasks tool, get_task_logs tool, Afhankelijkheden: qlik_client.py, mcp.server.fastmcp
-2. qlik_client.py - Status: ✅ Voltooid (Uitgebreid), Pad: /qlik_client.py, Functionaliteit: QlikClient klasse met session-based authenticatie, error handling, volledige get_apps() implementatie met QRS API call, volledige get_tasks() implementatie met /qrs/task/full endpoint en uitgebreide data formatting, volledige get_logs() implementatie met /qrs/executionresult endpoint, retry mechanisme, data formatting, environment variabelen ondersteuning, Afhankelijkheden: requests, python-dotenv
-3. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen, Afhankelijkheden: geen
-4. requirements.txt - Status: ✅ Voltooid, Pad: /requirements.txt, Functionaliteit: Python package dependencies voor MCP, requests, logging, etc., Afhankelijkheden: geen
-5. README.md - Status: ✅ Voltooid, Pad: /README.md, Functionaliteit: Uitgebreide documentatie met installatie instructies, configuratie en gebruik, Afhankelijkheden: geen
+1. app.py - Status: ✅ Voltooid (Browser-based), Pad: /app.py, Functionaliteit: FastMCP server met BrowserQlikClient integratie, persistent browser context hergebruik, graceful shutdown handling, list_apps tool, list_apps_with_session tool (backward compatibility), list_tasks tool, get_task_logs tool, Afhankelijkheden: browser_qlik_client.py, mcp.server.fastmcp
+
+2. browser_qlik_client.py - Status: ✅ Voltooid (Nieuw), Pad: /browser_qlik_client.py, Functionaliteit: BrowserQlikClient klasse met sync_playwright, persistent browser context, automatische en handmatige authenticatie, browser-based API calls via fetch, retry mechanisme, error handling, get_apps(), get_tasks(), get_logs() methoden, Afhankelijkheden: playwright, python-dotenv
+
+3. browser_manager.py - Status: ✅ Voltooid (Nieuw), Pad: /browser_manager.py, Functionaliteit: BrowserManager klasse voor browser lifecycle management, health checks, error recovery, retry mechanisme, resource cleanup, context manager support, Afhankelijkheden: playwright
+
+4. qlik_client.py - Status: ✅ Voltooid (Legacy), Pad: /qlik_client.py, Functionaliteit: Legacy QlikClient klasse met requests-based authenticatie (behouden voor referentie), session-based authenticatie, QRS API calls, retry mechanisme, data formatting, Afhankelijkheden: requests, python-dotenv
+
+5. get_apps_with_playwright.py - Status: ✅ Voltooid (Updated), Pad: /get_apps_with_playwright.py, Functionaliteit: Demo script voor BrowserQlikClient, toont authenticatie en apps ophalen, test script voor browser-based implementatie, Afhankelijkheden: browser_qlik_client.py
+
+6. .env-example - Status: ✅ Voltooid, Pad: /.env-example, Functionaliteit: Configuratie template met alle benodigde environment variabelen (inclusief QLIK_USERNAME en QLIK_PASSWORD), Afhankelijkheden: geen
+
+7. requirements.txt - Status: ✅ Voltooid (Updated), Pad: /requirements.txt, Functionaliteit: Python package dependencies inclusief playwright voor browser-based functionaliteit, Afhankelijkheden: geen
+
+8. README.md - Status: 🔄 Moet worden geupdate, Pad: /README.md, Functionaliteit: Documentatie moet worden geupdate voor browser-based implementatie, Afhankelijkheden: geen
 
 Voltooide stappen:
-- Stap 1: Basis project setup - Alle configuratie bestanden en documentatie zijn geïmplementeerd
-- Stap 2: QlikSense client implementatie - QlikClient klasse met session-based authenticatie, error handling en basis API methoden geïmplementeerd
-- Stap 3: FastMCP server setup - FastMCP server geïmplementeerd met minimale structuur
-- Stap 4: Apps lijst tool implementatie - list_apps tool geregistreerd met directe @mcp.tool() decorator
-- Stap 5: App.py vereenvoudiging - Complexe QlikMCPServer klasse vervangen door minimale implementatie zoals Github-MCP-server
-- Stap 6: Taken lijst tool implementatie - list_tasks tool geregistreerd met @mcp.tool() decorator, QlikClient.get_tasks() methode volledig geïmplementeerd met QRS API call en uitgebreide data formatting
-- Stap 7: Logs uitlezen tool implementatie - get_task_logs tool geregistreerd met @mcp.tool() decorator, QlikClient.get_logs() methode volledig geïmplementeerd met QRS API call naar /qrs/executionresult endpoint, uitgebreide data formatting voor log entries (status, timestamps, duur, script logs, foutmeldingen), parameter validatie en consistent error handling
+- Stap 1-7: Alle oorspronkelijke stappen voltooid met requests-based implementatie
+- Stap 8: Browser-based refactoring - BrowserQlikClient geïmplementeerd met sync_playwright, persistent browser context, automatische/handmatige authenticatie, browser-based API calls via fetch API, retry mechanisme en error handling
+- Stap 9: Browser lifecycle management - BrowserManager geïmplementeerd voor browser health checks, error recovery en resource cleanup
+- Stap 10: MCP server integratie - app.py geupdate om BrowserQlikClient te gebruiken met persistent browser context hergebruik en graceful shutdown
+- Stap 11: Demo script update - get_apps_with_playwright.py geupdate om nieuwe BrowserQlikClient te gebruiken
