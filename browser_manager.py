@@ -20,7 +20,7 @@ class AsyncBrowserManager:
     async def get_session_id(self):
         """Start browser, authenticeer en haal session_id op (async)"""
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=False)
+            browser = await p.chromium.launch(headless=True)
             
             # Context met http_credentials
             context = await browser.new_context(

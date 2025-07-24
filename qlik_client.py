@@ -19,7 +19,8 @@ class QlikClient:
         self.user_ID = username.split(";")[-1] if ";" in username else username
         
         # WebSocket URL voor eventuele toekomstige gebruik
-        self.ws_url = f"wss://{server}/app"
+        host = server.replace("https://", "").replace("http://", "")
+        self.ws_url = f"wss://{host}/app"
         self.headers = [
             f"Cookie: X-Qlik-Session={session_id}",
             f"X-Qlik-User: {username}"
@@ -85,7 +86,7 @@ class QlikClient:
     def get_task_logs(self, task_id: str) -> list:
         """Retrieve logs for a specific task."""
         xrfkey = "0123456789abcdef"
-        url = f"{self.server}/qrs/executionresult/full?filter=executionId eq '{task_id}'&xrfkey={xrfkey}"
+        url = f"{self.server}/qrs/executionresult/full?filter=task.id eq '{task_id}'&xrfkey={xrfkey}"
 
         headers = self._get_headers(xrfkey)
 
@@ -108,29 +109,46 @@ class QlikClient:
 
     def get_app_script(self, app_id: str) -> str:
         """Retrieve the complete script of a specific QlikSense app."""
-        xrfkey = "0123456789abcdef"
-        url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
-
-        headers = self._get_headers(xrfkey)
-
-        response = requests.get(url, headers=headers, verify=False)
-
-        if response.status_code != 200:
-            raise Exception(f"Failed to fetch app script: {response.status_code} {response.text}")
-        
-        app_data = response.json()
-        return app_data.get("script", "")
+        ws = self._connect(app_id)
+        # Open document and wait for OpenDoc response
+        ws.send(json.dumps({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "OpenDoc",
+            "handle": -1,
+            "params": {"qDocName": app_id}
+        }))
+        while True:
+            resp = json.loads(ws.recv())
+            if resp.get("id") == 1 and "result" in resp:
+                handle = resp["result"]["qReturn"]["qHandle"]
+                break
+        # Request script and wait for response
+        ws.send(json.dumps({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "GetScript",
+            "handle": handle,
+            "params": {}
+        }))
+        while True:
+            resp = json.loads(ws.recv())
+            if resp.get("id") == 2 and "result" in resp:
+                script = resp["result"].get("qScript", "")
+                break
+        ws.close()
+        return script
 
     def get_app_metadata(self, app_id: str) -> dict:
         """Retrieve measures, dimensions and sheets from a specific app."""
         xrfkey = "0123456789abcdef"
         
         # Get measures
-        measures_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'measure'&xrfkey={xrfkey}"
+        measures_url = f"{self.server}/qrs/app/object/full?filter=app.id eq {app_id} and objectType eq 'measure'&xrfkey={xrfkey}"
         # Get dimensions  
-        dimensions_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'dimension'&xrfkey={xrfkey}"
+        dimensions_url = f"{self.server}/qrs/app/object/full?filter=app.id eq {app_id} and objectType eq 'dimension'&xrfkey={xrfkey}"
         # Get sheets
-        sheets_url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'sheet'&xrfkey={xrfkey}"
+        sheets_url = f"{self.server}/qrs/app/object/full?filter=app.id eq {app_id} and objectType eq 'sheet'&xrfkey={xrfkey}"
 
         headers = self._get_headers(xrfkey)
         
@@ -188,42 +206,57 @@ class QlikClient:
 
         return metadata
 
-    def update_app_script(self, app_id: str, script: str) -> dict:
-        """Update the script of a specific app with a new version."""
-        xrfkey = "0123456789abcdef"
-        
-        # First get the current app data
-        get_url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
-        headers = self._get_headers(xrfkey)
+    def update_app_script(self, app_id: str, new_script: str) -> bool:
+        """Update the script of a specific QlikSense app and save it."""
+        ws = self._connect(app_id)
 
-        response = requests.get(get_url, headers=headers, verify=False)
-        
-        if response.status_code != 200:
-            raise Exception(f"Failed to fetch current app data: {response.status_code} {response.text}")
-        
-        app_data = response.json()
-        
-        # Update the script
-        app_data["script"] = script
-        
-        # PUT the updated app data back
-        put_url = f"{self.server}/qrs/app/{app_id}?xrfkey={xrfkey}"
-        
-        response = requests.put(put_url, headers=headers, data=json.dumps(app_data), verify=False)
-        
-        if response.status_code not in [200, 201]:
-            raise Exception(f"Failed to update app script: {response.status_code} {response.text}")
-        
-        return {
-            "success": True,
-            "message": f"Script successfully updated for app {app_id}",
-            "app_id": app_id
-        }
+        # Open the app document
+        ws.send(json.dumps({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "OpenDoc",
+            "handle": -1,
+            "params": {"qDocName": app_id}
+        }))
+        while True:
+            resp = json.loads(ws.recv())
+            if resp.get("id") == 1 and "result" in resp:
+                handle = resp["result"]["qReturn"]["qHandle"]
+                break
+
+        # Set new script
+        ws.send(json.dumps({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "SetScript",
+            "handle": handle,
+            "params": {"qScript": new_script}
+        }))
+        while True:
+            resp = json.loads(ws.recv())
+            if resp.get("id") == 2:
+                break
+
+        # Save the app
+        ws.send(json.dumps({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "DoSave",
+            "handle": handle,
+            "params": {}
+        }))
+        while True:
+            resp = json.loads(ws.recv())
+            if resp.get("id") == 3:
+                break
+
+        ws.close()
+        return True
 
     def get_app_variables(self, app_id: str) -> list:
         """Retrieve variables from a specific app."""
         xrfkey = "0123456789abcdef"
-        url = f"{self.server}/qrs/app/{app_id}/object/full?filter=objectType eq 'variable'&xrfkey={xrfkey}"
+        url = f"{self.server}/qrs/app/object/full?filter=app.id eq {app_id} and objectType eq 'variable'&xrfkey={xrfkey}"
 
         headers = self._get_headers(xrfkey)
 
@@ -304,9 +337,9 @@ class QlikClient:
             "download_url": f"{self.server}/qrs/download/app/{app_id}?xrfkey={xrfkey}"
         }
 
-    def _connect(self):
+    def _connect(self, app_id: str):
         return websocket.create_connection(
-            self.ws_url,
+            f"{self.ws_url}/{app_id}",
             header=self.headers,
             sslopt={"cert_reqs": ssl.CERT_NONE}
         )

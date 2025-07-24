@@ -10,6 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from browser_manager import AsyncBrowserManager
 from qlik_client import QlikClient
 import os
+import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
